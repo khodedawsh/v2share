@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "v2share"
+dynamic = ["version"]
+dependencies = [
+    "jinja2 >= 3.1.3",
+]
+requires-python = ">= 3.8"
+authors = [
+    {name = "Dawsh", email = "dawsh@duck.com"}
+]
+maintainers = [
+    {name = "Dawsh", email = "dawsh@duck.com"}
+]
+description = "generate configurations painlessly for xray/sing-box/clash"
+readme = "README.md"
+keywords = ["v2ray", "sing-box", "clash", "xray", "xray-core", "vpn", "proxy"]
+
+[project.urls]
+Homepage = "https://github.com/khodedawsh/v2share"
+Repository = "https://github.com/khodedawsh/v2share.git"
+Issues = "https://github.com/khodedawsh/v2share/issues"
+
+[tool.black]
+
+[tool.hatch]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "v2share/_version.py"
