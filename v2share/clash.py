@@ -1,11 +1,17 @@
-from typing import List
+from importlib import resources
+from typing import List, Optional
+
+import yaml
 
 from v2share.config import V2Config
-from v2share.templates import render_template
 
 
 class ClashConfiguration:
-    def __init__(self):
+    def __init__(self, template_path: Optional[str] = None):
+        if not template_path:
+            template_path = (resources.files("v2share.templates") / "clash.yml")
+        with open(template_path, "r") as f:
+            self.template_data = f.read()
         self.data = {
             "proxies": [],
             "proxy-groups": [],
@@ -18,9 +24,11 @@ class ClashConfiguration:
             self._add_node(proxy)
 
     def render(self):
-        return render_template(
-            "clash.yml", {"conf": self.data, "proxy_remarks": self.proxy_remarks}
-        )
+        result = yaml.safe_load(self.template_data)
+        result["proxies"] = self.data["proxies"]
+        result["rules"] = self.data["rules"]
+        result["proxy-groups"][0]["proxies"] = self.proxy_remarks
+        return yaml.safe_dump(result)
 
     def _remark_validation(self, remark, depth: int = 0):
         if remark not in self.proxy_remarks:

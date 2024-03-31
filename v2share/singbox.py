@@ -1,18 +1,20 @@
 import json
+from importlib import resources
 from typing import List
 
 from v2share.config import V2Config
-from v2share.templates import render_template
 
 
 class SingBoxConfiguration(str):
-    def __init__(self, template: str = "singbox.json"):
-        self._template = template
+    def __init__(self, template_path: str = None):
+        if not template_path:
+            template_path = (resources.files("v2share.templates") / "singbox.json")
+        with open(template_path, "r") as f:
+            self._template_data = f.read()
         self._outbounds = []
 
     def render(self):
-        template = render_template(self._template)
-        result = json.loads(template)
+        result = json.loads(self._template_data)
         result["outbounds"].extend(self._outbounds)
         urltest_types = ["vmess", "vless", "trojan", "shadowsocks"]
         urltest_tags = [
@@ -156,9 +158,8 @@ class SingBoxConfiguration(str):
             "server": address,
             "server_port": port,
         }
-        if net in ("tcp", "kcp") or header_type != "http":
-            if flow:
-                config["flow"] = flow
+        if flow and type == "vless":
+            config["flow"] = flow
 
         if net in ["http", "ws", "quic", "grpc", "httpupgrade"]:
             config["transport"] = SingBoxConfiguration.transport_config(
