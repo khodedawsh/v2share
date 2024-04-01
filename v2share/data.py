@@ -7,7 +7,7 @@ import urllib.parse as urlparse
 
 
 @dataclass
-class V2Config:
+class V2Data:
     protocol: str
     remark: str
     address: str

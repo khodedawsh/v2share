@@ -1,10 +1,10 @@
 import uuid
 
-from v2share import V2Config
+from v2share import V2Data
 
 
 def test_shadowsocks_link():
-    ss = V2Config(
+    ss = V2Data(
         "shadowsocks",
         "remark",
         "127.0.0.1",
@@ -15,12 +15,12 @@ def test_shadowsocks_link():
 
 
 def test_trojan_link():
-    tj = V2Config("trojan", "remark", "127.0.0.1", 1234, password="1234")
+    tj = V2Data("trojan", "remark", "127.0.0.1", 1234, password="1234")
     assert tj.to_link() == "trojan://1234@127.0.0.1:1234?security=none&type=tcp#remark"
 
 
 def test_vless_link():
-    vl = V2Config(
+    vl = V2Data(
         "vless",
         "remark",
         "127.0.0.1",

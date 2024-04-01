@@ -2,10 +2,10 @@ import json
 from importlib import resources
 from typing import List
 
-from v2share.config import V2Config
+from v2share.data import V2Data
 
 
-class SingBoxConfiguration(str):
+class SingBoxConfig(str):
     def __init__(self, template_path: str = None):
         if not template_path:
             template_path = (resources.files("v2share.templates") / "singbox.json")
@@ -175,7 +175,7 @@ class SingBoxConfiguration(str):
 
         return config
 
-    def add_proxies(self, proxies: List[V2Config]):
+    def add_proxies(self, proxies: List[V2Data]):
         for config in proxies:
             outbound = self.make_outbound(
                 remark=config.remark,

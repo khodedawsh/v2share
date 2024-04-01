@@ -3,10 +3,10 @@ from typing import List, Optional
 
 import yaml
 
-from v2share.config import V2Config
+from v2share.data import V2Data
 
 
-class ClashConfiguration:
+class ClashConfig:
     def __init__(self, template_path: Optional[str] = None):
         if not template_path:
             template_path = (resources.files("v2share.templates") / "clash.yml")
@@ -19,7 +19,7 @@ class ClashConfiguration:
         }
         self.proxy_remarks = []
 
-    def add_proxies(self, proxies: List[V2Config]):
+    def add_proxies(self, proxies: List[V2Data]):
         for proxy in proxies:
             self._add_node(proxy)
 
@@ -106,7 +106,7 @@ class ClashConfiguration:
 
         return node
 
-    def _add_node(self, config: V2Config):
+    def _add_node(self, config: V2Data):
         node = self._make_node(
             name=config.remark,
             type=config.protocol,
