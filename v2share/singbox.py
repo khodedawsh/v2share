@@ -162,14 +162,14 @@ class SingBoxConfig(str):
             config["flow"] = flow
 
         if net in ["http", "ws", "quic", "grpc", "httpupgrade"]:
-            config["transport"] = SingBoxConfiguration.transport_config(
+            config["transport"] = SingBoxConfig.transport_config(
                 transport_type=net, host=host, path=path, headers=headers
             )
         else:
             config["network"] = net
 
         if tls in ("tls", "reality"):
-            config["tls"] = SingBoxConfiguration.tls_config(
+            config["tls"] = SingBoxConfig.tls_config(
                 sni=sni, fp=fp, tls=tls, pbk=pbk, sid=sid, alpn=alpn, ais=ais
             )
 
