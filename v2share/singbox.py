@@ -198,7 +198,7 @@ class SingBoxConfig(str):
             )
 
             if config.protocol in ["vless", "vmess"]:
-                outbound["uuid"] = config.uuid
+                outbound["uuid"] = str(config.uuid)
 
             elif config.protocol == "trojan":
                 outbound["password"] = config.password
