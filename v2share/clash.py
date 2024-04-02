@@ -123,7 +123,7 @@ class ClashConfig:
         )
 
         if config.protocol == "vmess":
-            node["uuid"] = config.uuid
+            node["uuid"] = str(config.uuid)
             node["alterId"] = 0
             node["cipher"] = "auto"
             self.data["proxies"].append(node)

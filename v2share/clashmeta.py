@@ -63,14 +63,14 @@ class ClashMetaConfig(ClashConfig):
         )
 
         if config.protocol == "vmess":
-            node["uuid"] = config.uuid
+            node["uuid"] = str(config.uuid)
             node["alterId"] = 0
             node["cipher"] = "auto"
             self.data["proxies"].append(node)
             self.proxy_remarks.append(config.remark)
 
         if config.protocol == "vless":
-            node["uuid"] = config.uuid
+            node["uuid"] = str(config.uuid)
 
             if (
                 config.transport_type in ("tcp", "kcp")
