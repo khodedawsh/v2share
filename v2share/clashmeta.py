@@ -72,10 +72,7 @@ class ClashMetaConfig(ClashConfig):
         if config.protocol == "vless":
             node["uuid"] = str(config.uuid)
 
-            if (
-                config.transport_type in ("tcp", "kcp")
-                and config.header_type != "http"
-            ):
+            if config.transport_type in ("tcp", "kcp") and config.header_type != "http":
                 node["flow"] = config.flow
 
             self.data["proxies"].append(node)

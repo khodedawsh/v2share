@@ -8,7 +8,7 @@ from v2share.data import V2Data
 class SingBoxConfig(str):
     def __init__(self, template_path: str = None):
         if not template_path:
-            template_path = (resources.files("v2share.templates") / "singbox.json")
+            template_path = resources.files("v2share.templates") / "singbox.json"
         with open(template_path, "r") as f:
             self._template_data = f.read()
         self._outbounds = []

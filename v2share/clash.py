@@ -9,7 +9,7 @@ from v2share.data import V2Data
 class ClashConfig:
     def __init__(self, template_path: Optional[str] = None):
         if not template_path:
-            template_path = (resources.files("v2share.templates") / "clash.yml")
+            template_path = resources.files("v2share.templates") / "clash.yml"
         with open(template_path, "r") as f:
             self.template_data = f.read()
         self.data = {
@@ -137,4 +137,3 @@ class ClashConfig:
             node["cipher"] = config.shadowsocks_method
             self.data["proxies"].append(node)
             self.proxy_remarks.append(config.remark)
-
