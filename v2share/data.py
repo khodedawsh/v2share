@@ -1,9 +1,9 @@
 import base64
 import json
+import urllib.parse as urlparse
 from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
-import urllib.parse as urlparse
 
 
 @dataclass
@@ -71,7 +71,7 @@ class V2Data:
                 "aid": "0",
                 "host": self.host,
                 "id": str(self.uuid),
-                "transport_type": self.transport_type,
+                "net": self.transport_type,
                 "path": self.path,
                 "port": self.port,
                 "ps": self.remark,
