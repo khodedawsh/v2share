@@ -1,0 +1,364 @@
+import json
+from importlib import resources
+
+from v2share.data import V2Data
+
+
+class XrayConfig(str):
+
+    def __init__(self, template_path: str = None, mux_template_path: str = None):
+        self.config = []
+        if not template_path:
+            template_path = resources.files("v2share.templates") / "xray.json"
+        if not mux_template_path:
+            mux_template_path = resources.files("v2share.templates") / "xray_mux.json"
+        with open(template_path) as f:
+            self._template = f.read()
+        with open(mux_template_path) as f:
+            self._mux_template = f.read()
+
+    def add_proxies(self, proxies: list[V2Data]):
+        for data in proxies:
+            outbound = {"tag": data.remark, "protocol": data.protocol}
+
+            if data.protocol == "vmess":
+                outbound["settings"] = XrayConfig.vmess_config(
+                    address=data.address, port=data.port, uuid=str(data.uuid)
+                )
+            elif data.protocol == "vless":
+                if data.tls == "reality":
+                    flow = data.flow
+                else:
+                    flow = None
+                outbound["settings"] = XrayConfig.vless_config(
+                    address=data.address, port=data.port, uuid=str(data.uuid), flow=flow
+                )
+
+            elif data.protocol == "trojan":
+                outbound["settings"] = XrayConfig.trojan_config(
+                    address=data.address, port=data.port, password=data.password
+                )
+
+            elif data.protocol == "shadowsocks":
+                outbound["settings"] = XrayConfig.shadowsocks_config(
+                    address=data.address,
+                    port=data.port,
+                    password=data.password,
+                    method=data.shadowsocks_method,
+                )
+
+            outbounds = [outbound]
+            dialer_proxy = None
+
+            if data.fragment:
+                fragment_outbound = XrayConfig.make_fragment_outbound(
+                    data.fragment_packets, data.fragment_length, data.fragment_interval
+                )
+                outbounds.append(fragment_outbound)
+                dialer_proxy = fragment_outbound["tag"]
+
+            outbound["streamSettings"] = XrayConfig.make_stream_settings(
+                net=data.transport_type,
+                tls=data.tls,
+                sni=data.sni,
+                host=data.host,
+                path=data.path,
+                alpn=data.alpn,
+                fp=data.fingerprint,
+                pbk=data.reality_pbk,
+                sid=data.reality_sid,
+                ais=data.allow_insecure,
+                kcp_header_type=data.kcp_header_type,
+                grpc_multi_mode=data.grpc_multi_mode,
+                dialer_proxy=dialer_proxy,
+            )
+
+            mux_config = json.loads(self._mux_template)
+
+            outbound["mux"] = mux_config
+            if outbound["mux"]["enabled"]:
+                outbound["mux"]["enabled"] = False
+
+            json_template = json.loads(self._template)
+            json_template["remarks"] = data.remark
+            json_template["outbounds"] = outbounds + json_template["outbounds"]
+            self.config.append(json_template)
+
+    def render(self):
+        return json.dumps(self.config, indent=4)
+
+    @staticmethod
+    def tls_config(sni, fingerprint, alpn=None, ais=False):
+
+        tlsSettings = {}
+        if sni is not None:
+            tlsSettings["serverName"] = sni
+
+        tlsSettings["allowInsecure"] = ais or False
+
+        if fingerprint:
+            tlsSettings["fingerprint"] = fingerprint
+        if alpn:
+            tlsSettings["alpn"] = [alpn] if not isinstance(alpn, list) else alpn
+
+        return tlsSettings
+
+    @staticmethod
+    def reality_config(public_key, short_id, sni, fingerprint="", spiderx=""):
+
+        realitySettings = {
+            "serverName": sni,
+            "fingerprint": fingerprint,
+            "show": False,
+            "publicKey": public_key,
+            "shortId": short_id,
+            "spiderX": spiderx,
+        }
+
+        return realitySettings
+
+    @staticmethod
+    def ws_config(path=None, host=None):
+
+        ws_settings = {}
+        if path:
+            ws_settings["path"] = path
+        if host:
+            ws_settings["host"] = host
+
+        return ws_settings
+
+    @staticmethod
+    def httpupgrade_config(path=None, host=None):
+
+        httpupgrade_settings = {}
+        if path:
+            httpupgrade_settings["path"] = path
+        if host:
+            httpupgrade_settings["host"] = host
+
+        return httpupgrade_settings
+
+    @staticmethod
+    def grpc_config(service_name=None, multi_mode=False):
+
+        grpc_settings = {
+            "multi_mode": multi_mode,
+            "idle_timeout": 60,
+            "health_check_timeout": 20,
+            "permit_without_stream": False,
+            "initial_windows_size": 0,
+        }
+        if service_name:
+            grpc_settings["serviceName"] = service_name
+        return grpc_settings
+
+    @staticmethod
+    def tcp_http_config(path=None, host=None):
+        tcp_settings = {}
+
+        if any((path, host)):
+            tcp_settings["header"] = {}
+            tcp_settings["header"]["type"] = "http"
+
+            tcp_settings["header"]["request"] = {}
+            tcp_settings["header"]["request"]["version"] = "1.1"
+
+            tcp_settings["header"]["request"]["headers"] = {}
+            tcp_settings["header"]["request"]["method"] = "GET"
+            tcp_settings["header"]["request"]["headers"]["User-Agent"] = []
+            tcp_settings["header"]["request"]["headers"]["Accept-Encoding"] = [
+                "gzip, deflate"
+            ]
+            tcp_settings["header"]["request"]["headers"]["Connection"] = ["keep-alive"]
+            tcp_settings["header"]["request"]["headers"]["Pragma"] = "no-cache"
+
+            if path:
+                tcp_settings["header"]["request"]["path"] = [path]
+
+            if host:
+                tcp_settings["header"]["request"]["headers"]["Host"] = [host]
+
+        return tcp_settings
+
+    @staticmethod
+    def h2_config(path="/", host=None):
+        if host is None:
+            host = []
+        http_settings = {"path": path}
+        if host:
+            http_settings["host"] = host
+        else:
+            http_settings["host"] = []
+
+        return http_settings
+
+    @staticmethod
+    def quic_config(security="none", key=None, header_type="none"):
+
+        quic_settings = {
+            "security": security,
+            "header": {"type": header_type},
+        }
+
+        if key:
+            quic_settings["key"] = key
+
+        return quic_settings
+
+    @staticmethod
+    def kcp_config(seed=None, header_type=None):
+
+        kcp_settings = {
+            "header": {},
+            "mtu": 1350,
+            "tti": 50,
+            "uplinkCapacity": 12,
+            "downlinkCapacity": 100,
+            "congestion": False,
+            "readBufferSize": 2,
+            "writeBufferSize": 2,
+        }
+
+        if seed:
+            kcp_settings["seed"] = seed
+        if header_type:
+            kcp_settings["header"]["type"] = header_type
+        else:
+            kcp_settings["header"]["type"] = "none"
+
+        return kcp_settings
+
+    @staticmethod
+    def make_stream_settings(
+        net="tcp",
+        path="/",
+        host="",
+        tls="",
+        sni="",
+        fp="",
+        alpn="",
+        pbk="",
+        sid="",
+        ais=False,
+        kcp_header_type=None,
+        grpc_multi_mode=False,
+        dialer_proxy="",
+    ):
+        stream_settings = {"network": net}
+
+        if net == "ws":
+            stream_settings["wsSettings"] = XrayConfig.ws_config(path=path, host=host)
+        elif net == "grpc":
+            stream_settings["grpcSettings"] = XrayConfig.grpc_config(
+                service_name=path, multi_mode=grpc_multi_mode
+            )
+        elif net == "h2":
+            stream_settings["httpSettings"] = XrayConfig.h2_config(path=path, host=host)
+        elif net == "kcp":
+            stream_settings["kcpSettings"] = XrayConfig.kcp_config(
+                seed=path, header_type=kcp_header_type
+            )
+        elif net == "tcp":
+            stream_settings["tcpSettings"] = XrayConfig.tcp_http_config(
+                path=path, host=host
+            )
+        elif net == "quic":
+            stream_settings["quicSettings"] = XrayConfig.quic_config()
+        elif net == "httpupgrade":
+            stream_settings["httpupgradeSettings"] = XrayConfig.httpupgrade_config(
+                path=path, host=host
+            )
+
+        if tls == "tls":
+            stream_settings["security"] = "tls"
+            stream_settings["tlsSettings"] = XrayConfig.tls_config(
+                sni=sni, fingerprint=fp, alpn=alpn, ais=ais
+            )
+        elif tls == "reality":
+            stream_settings["security"] = "xtls"
+            stream_settings["realitySettings"] = XrayConfig.reality_config(
+                pbk, sid, sni, fingerprint=fp
+            )
+        else:
+            stream_settings["security"] = "none"
+
+        if dialer_proxy:
+            stream_settings["sockopt"] = {"dialerProxy": dialer_proxy}
+
+        return stream_settings
+
+    @staticmethod
+    def vmess_config(address, port, uuid):
+
+        return {
+            "vnext": [
+                {
+                    "address": address,
+                    "port": port,
+                    "users": [
+                        {
+                            "id": uuid,
+                            "security": "auto",
+                        }
+                    ],
+                }
+            ]
+        }
+
+    @staticmethod
+    def vless_config(address, port, uuid, flow="none"):
+
+        return {
+            "vnext": [
+                {
+                    "address": address,
+                    "port": port,
+                    "users": [
+                        {
+                            "id": uuid,
+                            "encryption": "none",
+                            "flow": flow,
+                        }
+                    ],
+                }
+            ]
+        }
+
+    @staticmethod
+    def trojan_config(address, port, password):
+        return {
+            "servers": [
+                {
+                    "address": address,
+                    "port": port,
+                    "password": password,
+                    "email": "kiomars",
+                }
+            ]
+        }
+
+    @staticmethod
+    def shadowsocks_config(address, port, password, method):
+        return {
+            "servers": [
+                {
+                    "address": address,
+                    "port": port,
+                    "password": password,
+                    "email": "kiomars",
+                    "method": method,
+                    "uot": False,
+                }
+            ]
+        }
+
+    @staticmethod
+    def make_fragment_outbound(packets, length, interval):
+        return {
+            "tag": "fragment_out",
+            "protocol": "freedom",
+            "settings": {
+                "fragment": {"packets": packets, "length": length, "interval": interval}
+            },
+        }
