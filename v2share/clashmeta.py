@@ -1,4 +1,5 @@
-from v2share import ClashConfig, V2Data
+from v2share.clash import ClashConfig
+from v2share.data import V2Data
 
 
 class ClashMetaConfig(ClashConfig):
