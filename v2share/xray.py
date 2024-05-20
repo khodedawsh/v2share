@@ -1,5 +1,6 @@
 import json
 from importlib import resources
+from typing import List
 
 from v2share.data import V2Data
 
@@ -17,7 +18,7 @@ class XrayConfig(str):
         with open(mux_template_path) as f:
             self._mux_template = f.read()
 
-    def add_proxies(self, proxies: list[V2Data]):
+    def add_proxies(self, proxies: List[V2Data]):
         for data in proxies:
             outbound = {"tag": data.remark, "protocol": data.protocol}
 
