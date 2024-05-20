@@ -89,17 +89,14 @@ class XrayConfig(str):
 
     @staticmethod
     def tls_config(sni, fingerprint, alpn=None, ais=False):
+        tlsSettings = {"serverName": sni, "allowInsecure": ais or False}
+        if alpn is None:
+            alpn = ["h2", "http/1.1"]
 
-        tlsSettings = {}
-        if sni is not None:
-            tlsSettings["serverName"] = sni
-
-        tlsSettings["allowInsecure"] = ais or False
+        tlsSettings["alpn"] = alpn
 
         if fingerprint:
             tlsSettings["fingerprint"] = fingerprint
-        if alpn:
-            tlsSettings["alpn"] = [alpn] if not isinstance(alpn, list) else alpn
 
         return tlsSettings
 
@@ -158,20 +155,21 @@ class XrayConfig(str):
         tcp_settings = {}
 
         if any((path, host)):
-            tcp_settings["header"] = {}
-            tcp_settings["header"]["type"] = "http"
-
-            tcp_settings["header"]["request"] = {}
-            tcp_settings["header"]["request"]["version"] = "1.1"
-
-            tcp_settings["header"]["request"]["headers"] = {}
-            tcp_settings["header"]["request"]["method"] = "GET"
-            tcp_settings["header"]["request"]["headers"]["User-Agent"] = []
-            tcp_settings["header"]["request"]["headers"]["Accept-Encoding"] = [
-                "gzip, deflate"
-            ]
-            tcp_settings["header"]["request"]["headers"]["Connection"] = ["keep-alive"]
-            tcp_settings["header"]["request"]["headers"]["Pragma"] = "no-cache"
+            tcp_settings = {
+                "header": {
+                    "type": "http",
+                    "request": {
+                        "version": "1.1",
+                        "method": "GET",
+                        "headers": {
+                            "User-Agent": [],
+                            "Accept-Encoding": ["gzip, deflate"],
+                            "Connection": ["keep-alive"],
+                            "Pragma": "no-cache",
+                        },
+                    },
+                }
+            }
 
             if path:
                 tcp_settings["header"]["request"]["path"] = [path]
@@ -182,9 +180,11 @@ class XrayConfig(str):
         return tcp_settings
 
     @staticmethod
-    def h2_config(path="/", host=None):
+    def h2_config(path=None, host=None):
         if host is None:
             host = []
+        if path is None:
+            path = "/"
         http_settings = {"path": path}
         if host:
             http_settings["host"] = host
@@ -232,18 +232,18 @@ class XrayConfig(str):
     @staticmethod
     def make_stream_settings(
         net="tcp",
-        path="/",
-        host="",
-        tls="",
+        path=None,
+        host=None,
+        tls="none",
         sni="",
-        fp="",
-        alpn="",
-        pbk="",
-        sid="",
+        fp=None,
+        alpn="h2,http/1.1",
+        pbk=None,
+        sid=None,
         ais=False,
         kcp_header_type=None,
         grpc_multi_mode=False,
-        dialer_proxy="",
+        dialer_proxy=None,
     ):
         stream_settings = {"network": net}
 
@@ -273,7 +273,7 @@ class XrayConfig(str):
         if tls == "tls":
             stream_settings["security"] = "tls"
             stream_settings["tlsSettings"] = XrayConfig.tls_config(
-                sni=sni, fingerprint=fp, alpn=alpn, ais=ais
+                sni=sni, fingerprint=fp, alpn=alpn.split(",") if alpn else None, ais=ais
             )
         elif tls == "reality":
             stream_settings["security"] = "xtls"
