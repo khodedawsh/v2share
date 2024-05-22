@@ -20,7 +20,6 @@ class V2Data:
     transport_type: str = "tcp"
     grpc_multi_mode: bool = False
     path: Optional[str] = None
-    kcp_header_type: Optional[str] = None
     header_type: Optional[str] = None
     tls: str = "none"
     flow: Optional[str] = None
