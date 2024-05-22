@@ -80,7 +80,7 @@ class V2Data:
                 "path": self.path,
                 "port": self.port,
                 "ps": self.remark,
-                "scy": "auto",
+                "scy": self.vmess_security,
                 "tls": self.tls,
                 "type": self.header_type,
                 "v": "2",
