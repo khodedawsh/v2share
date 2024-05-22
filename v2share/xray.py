@@ -69,7 +69,7 @@ class XrayConfig(str):
                 pbk=data.reality_pbk,
                 sid=data.reality_sid,
                 ais=data.allow_insecure,
-                kcp_header_type=data.kcp_header_type,
+                header_type=data.header_type,
                 grpc_multi_mode=data.grpc_multi_mode,
                 dialer_proxy=dialer_proxy,
             )
@@ -242,7 +242,7 @@ class XrayConfig(str):
         pbk=None,
         sid=None,
         ais=False,
-        kcp_header_type=None,
+        header_type=None,
         grpc_multi_mode=False,
         dialer_proxy=None,
     ):
@@ -258,7 +258,7 @@ class XrayConfig(str):
             stream_settings["httpSettings"] = XrayConfig.h2_config(path=path, host=host)
         elif net == "kcp":
             stream_settings["kcpSettings"] = XrayConfig.kcp_config(
-                seed=path, header_type=kcp_header_type
+                seed=path, header_type=header_type
             )
         elif net == "tcp":
             stream_settings["tcpSettings"] = XrayConfig.tcp_http_config(
