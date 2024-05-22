@@ -17,12 +17,12 @@ class V2Data:
     vmess_security: str = "auto"
     password: Optional[str] = None
     host: Optional[str] = None
-    transport_type: Optional[str] = "tcp"
+    transport_type: str = "tcp"
     grpc_multi_mode: bool = False
     path: Optional[str] = None
     kcp_header_type: Optional[str] = None
     header_type: Optional[str] = None
-    tls: Optional[str] = "none"
+    tls: str = "none"
     flow: Optional[str] = None
     sni: Optional[str] = None
     fingerprint: Optional[str] = None
@@ -31,9 +31,9 @@ class V2Data:
     reality_sid: Optional[str] = None
     reality_spx: Optional[str] = None
     fragment: bool = False
-    fragment_packets: Optional[str] = "tlshello"
-    fragment_length: Optional[str] = "100-200"
-    fragment_interval: Optional[str] = "10-20"
+    fragment_packets: str = "tlshello"
+    fragment_length: str = "100-200"
+    fragment_interval: str = "10-20"
     allow_insecure: bool = False
 
     def _apply_tls_settings(self, payload):
