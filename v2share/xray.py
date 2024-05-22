@@ -209,8 +209,6 @@ class XrayConfig(str):
             kcp_settings["seed"] = seed
         if header_type:
             kcp_settings["header"]["type"] = header_type
-        else:
-            kcp_settings["header"]["type"] = "none"
 
         return kcp_settings
 
