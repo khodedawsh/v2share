@@ -152,31 +152,15 @@ class XrayConfig(str):
         return grpc_settings
 
     @staticmethod
-    def tcp_http_config(path=None, host=None):
-        tcp_settings = {}
+    def tcp_http_config(header_type=None):
+        if header_type is None:
+            header_type = "none"
 
-        if any((path, host)):
-            tcp_settings = {
-                "header": {
-                    "type": "http",
-                    "request": {
-                        "version": "1.1",
-                        "method": "GET",
-                        "headers": {
-                            "User-Agent": [],
-                            "Accept-Encoding": ["gzip, deflate"],
-                            "Connection": ["keep-alive"],
-                            "Pragma": "no-cache",
-                        },
-                    },
-                }
+        tcp_settings = {
+            "header": {
+                "type": header_type,
             }
-
-            if path:
-                tcp_settings["header"]["request"]["path"] = [path]
-
-            if host:
-                tcp_settings["header"]["request"]["headers"]["Host"] = [host]
+        }
 
         return tcp_settings
 
@@ -262,7 +246,7 @@ class XrayConfig(str):
             )
         elif net == "tcp":
             stream_settings["tcpSettings"] = XrayConfig.tcp_http_config(
-                path=path, host=host
+                header_type=header_type
             )
         elif net == "quic":
             stream_settings["quicSettings"] = XrayConfig.quic_config()
