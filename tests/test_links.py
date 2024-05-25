@@ -9,9 +9,9 @@ def test_shadowsocks_link():
         "remark",
         "127.0.0.1",
         1234,
-        uuid=uuid.UUID("bb34fc3a-529d-473a-a3d9-1749b2116f2a"),
+        password="1234",
     )
-    assert ss.to_link() == "ss://Tm9uZTpOb25lQDEyNy4wLjAuMToxMjM0#remark"
+    assert ss.to_link() == "ss://Tm9uZToxMjM0QDEyNy4wLjAuMToxMjM0#remark"
 
 
 def test_trojan_link():
