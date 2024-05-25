@@ -36,7 +36,7 @@ class V2Data:
     allow_insecure: bool = False
 
     def _apply_tls_settings(self, payload):
-        if self.tls == "tls" or self.tls == "reality":
+        if self.tls in ["tls", "reality"]:
             payload.update(
                 {
                     "sni": self.sni,
@@ -49,7 +49,7 @@ class V2Data:
                     "alpn": self.alpn,
                 }
             )
-        if self.tls == "reality":
+        elif self.tls == "reality":
             payload.update(
                 {
                     "pbk": self.reality_pbk,
@@ -57,6 +57,22 @@ class V2Data:
                     "spx": self.reality_spx,
                 }
             )
+
+    def _apply_trojan_vless_transport(self, payload):
+        if self.transport_type == "grpc":
+            transport_data = {
+                "serviceName": self.path,
+                "authority": self.host,
+                "mode": "multi" if self.grpc_multi_mode else "gun",
+            }
+        elif self.transport_type == "kcp":
+            transport_data = {"seed": self.path}
+        elif self.transport_type == "quic":
+            transport_data = {"key": self.path, "quicSecurity": self.host}
+        else:
+            transport_data = {"path": self.path, "host": self.host}
+
+        payload.update(transport_data)
 
     def to_link(self):
         if self.protocol == "shadowsocks":
@@ -70,6 +86,7 @@ class V2Data:
                 ).decode()
                 + f"#{urlparse.quote(self.remark)}"
             )
+
         elif self.protocol == "vmess":
             payload = {
                 "add": self.address,
@@ -91,44 +108,35 @@ class V2Data:
             return (
                 "vmess://"
                 + base64.b64encode(
-                    json.dumps(payload, sort_keys=True).encode("utf-8")
+                    json.dumps(payload, sort_keys=True).encode()
                 ).decode()
             )
-        elif self.protocol == "vless":
+
+        elif self.protocol in ["trojan", "vless"]:
             payload = {
                 "security": self.tls,
                 "type": self.transport_type,
-                "host": self.host,
                 "headerType": self.header_type,
             }
-            if self.flow:
+            if self.protocol == "vless" and self.flow:
                 payload.update({"flow": self.flow})
 
-            path_name = "serviceName" if self.transport_type == "grpc" else "path"
-            payload.update({path_name: self.path})
+            self._apply_trojan_vless_transport(payload)
 
             self._apply_tls_settings(payload)
+
             payload = dict(filter(lambda p: p[1], payload.items()))
-            return (
-                "vless://"
-                + f"{self.uuid}@{self.address}:{self.port}?"
-                + urlparse.urlencode(payload)
-                + f"#{(urlparse.quote(self.remark))}"
-            )
-        elif self.protocol == "trojan":
-            payload = {
-                "security": self.tls,
-                "type": self.transport_type,
-                "host": self.host,
-                "headerType": self.header_type,
-            }
-            path_name = "serviceName" if self.transport_type == "grpc" else "path"
-            payload.update({path_name: self.path})
-            self._apply_tls_settings(payload)
-            payload = dict(filter(lambda p: p[1], payload.items()))
-            return (
-                "trojan://"
-                + f"{urlparse.quote(self.password, safe=':')}@{self.address}:{self.port}?"
-                + urlparse.urlencode(payload)
-                + f"#{urlparse.quote(self.remark)}"
-            )
+            if self.protocol == "vless":
+                return (
+                    "vless://"
+                    + f"{self.uuid}@{self.address}:{self.port}?"
+                    + urlparse.urlencode(payload)
+                    + f"#{(urlparse.quote(self.remark))}"
+                )
+            else:
+                return (
+                    "trojan://"
+                    + f"{urlparse.quote(self.password, safe=':')}@{self.address}:{self.port}?"
+                    + urlparse.urlencode(payload)
+                    + f"#{urlparse.quote(self.remark)}"
+                )
