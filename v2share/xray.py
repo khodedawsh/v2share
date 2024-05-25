@@ -247,7 +247,9 @@ class XrayConfig(str):
                 header_type=header_type
             )
         elif net == "quic":
-            stream_settings["quicSettings"] = XrayConfig.quic_config()
+            stream_settings["quicSettings"] = XrayConfig.quic_config(
+                security=host, key=path, header_type=header_type
+            )
         elif net == "httpupgrade":
             stream_settings["httpupgradeSettings"] = XrayConfig.httpupgrade_config(
                 path=path, host=host
