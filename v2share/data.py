@@ -33,6 +33,7 @@ class V2Data:
     fragment_packets: str = "tlshello"
     fragment_length: str = "100-200"
     fragment_interval: str = "10-20"
+    enable_mux: bool = False
     allow_insecure: bool = False
 
     def _apply_tls_settings(self, payload):

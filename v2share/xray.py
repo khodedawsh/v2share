@@ -75,10 +75,8 @@ class XrayConfig(str):
             )
 
             mux_config = json.loads(self._mux_template)
-
+            mux_config["enabled"] = data.enable_mux
             outbound["mux"] = mux_config
-            if outbound["mux"]["enabled"]:
-                outbound["mux"]["enabled"] = False
 
             json_template = json.loads(self._template)
             json_template["remarks"] = data.remark
