@@ -237,7 +237,9 @@ class XrayConfig(str):
                 service_name=path, multi_mode=grpc_multi_mode
             )
         elif net == "h2":
-            stream_settings["httpSettings"] = XrayConfig.h2_config(path=path, host=host)
+            stream_settings["httpSettings"] = XrayConfig.h2_config(
+                path=path, host=[host]
+            )
         elif net == "kcp":
             stream_settings["kcpSettings"] = XrayConfig.kcp_config(
                 seed=path, header_type=header_type
