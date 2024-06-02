@@ -17,6 +17,13 @@ def test_shadowsocks_link():
 def test_trojan_link():
     tj = V2Data("trojan", "remark", "127.0.0.1", 1234, password="1234")
     assert tj.to_link() == "trojan://1234@127.0.0.1:1234?security=none&type=tcp#remark"
+    tj.tls = "tls"
+    tj.alpn = "h2"
+    tj.allow_insecure = True
+    assert (
+        tj.to_link()
+        == "trojan://1234@127.0.0.1:1234?security=tls&type=tcp&allowInsecure=1&alpn=h2#remark"
+    )
 
 
 def test_vless_link():
