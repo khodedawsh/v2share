@@ -46,6 +46,8 @@ class V2Data:
                     "fp": self.fingerprint,
                 }
             )
+            if self.protocol in ["vless", "trojan"]:
+                payload.update({"allowInsecure": int(self.allow_insecure)})
         if self.tls == "tls":
             payload.update(
                 {
