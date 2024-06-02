@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
+from v2share._utils import filter_dict
+
 
 @dataclass
 class V2Data:
@@ -105,7 +107,7 @@ class V2Data:
             }
 
             self._apply_tls_settings(payload)
-            payload = dict(filter(lambda p: p[1], payload.items()))
+            payload = filter_dict(payload, ("", None))
             return (
                 "vmess://"
                 + base64.b64encode(
@@ -126,18 +128,16 @@ class V2Data:
 
             self._apply_tls_settings(payload)
 
-            payload = dict(filter(lambda p: p[1], payload.items()))
-            if self.protocol == "vless":
-                return (
-                    "vless://"
-                    + f"{self.uuid}@{self.address}:{self.port}?"
-                    + urlparse.urlencode(payload)
-                    + f"#{(urlparse.quote(self.remark))}"
-                )
-            else:
-                return (
-                    "trojan://"
-                    + f"{urlparse.quote(self.password, safe=':')}@{self.address}:{self.port}?"
-                    + urlparse.urlencode(payload)
-                    + f"#{urlparse.quote(self.remark)}"
-                )
+            payload = filter_dict(payload, ("", None))
+
+            passphrase = (
+                self.uuid
+                if self.protocol == "vless"
+                else urlparse.quote(self.password, safe=":")
+            )
+            return (
+                f"{self.protocol}://"
+                + f"{passphrase}@{self.address}:{self.port}?"
+                + urlparse.urlencode(payload)
+                + f"#{(urlparse.quote(self.remark))}"
+            )
