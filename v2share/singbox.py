@@ -74,10 +74,15 @@ class SingBoxConfig(str):
         host=None,
         path=None,
         http_method=None,
+        headers=None,
     ):
+        if headers is None:
+            headers = {}
+
         transport_config = {"type": transport_type}
 
         if transport_type == "http":
+            transport_config["headers"] = headers
             if host:
                 transport_config["host"] = host
             if path:
@@ -85,6 +90,7 @@ class SingBoxConfig(str):
             if http_method:
                 transport_config["method"] = http_method
         elif transport_type == "ws":
+            transport_config["headers"] = headers
             if path:
                 if "?ed=" in path:
                     path, max_early_data = path.split("?ed=")
@@ -95,16 +101,16 @@ class SingBoxConfig(str):
                     transport_config["max_early_data"] = max_early_data
                 transport_config["path"] = path
             if host:
-                transport_config["headers"] = {"Host": host}
-        elif transport_type == "grpc":
-            if path:
-                transport_config["service_name"] = path
-
+                transport_config["headers"]["Host"] = host
         elif transport_type == "httpupgrade":
+            transport_config["headers"] = headers
             if host:
                 transport_config["host"] = host
             if path:
                 transport_config["path"] = path
+        elif transport_type == "grpc":
+            if path:
+                transport_config["service_name"] = path
 
         return transport_config
 
@@ -128,6 +134,7 @@ class SingBoxConfig(str):
                     transport_type=data.transport_type,
                     host=data.host,
                     path=data.path,
+                    headers=data.http_headers,
                 )
 
             if data.tls in ("tls", "reality"):
