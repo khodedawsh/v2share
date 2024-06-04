@@ -1,8 +1,8 @@
 import base64
 import json
 import urllib.parse as urlparse
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, Dict
 from uuid import UUID
 
 from v2share._utils import filter_dict
@@ -19,6 +19,7 @@ class V2Data:
     vmess_security: str = "auto"
     password: Optional[str] = None
     host: Optional[str] = None
+    http_headers: Dict[str, str] = field(default_factory=dict)
     transport_type: str = "tcp"
     grpc_multi_mode: bool = False
     path: Optional[str] = None

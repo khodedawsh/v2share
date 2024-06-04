@@ -112,9 +112,11 @@ class XrayConfig(str):
         return realitySettings
 
     @staticmethod
-    def ws_config(path=None, host=None):
+    def ws_config(path=None, host=None, headers=None):
+        if headers is None:
+            headers = {}
 
-        ws_settings = {}
+        ws_settings = {"headers": headers}
         if path:
             ws_settings["path"] = path
         if host:
@@ -123,9 +125,11 @@ class XrayConfig(str):
         return ws_settings
 
     @staticmethod
-    def httpupgrade_config(path=None, host=None):
+    def httpupgrade_config(path=None, host=None, headers=None):
+        if headers is None:
+            headers = {}
 
-        httpupgrade_settings = {}
+        httpupgrade_settings = {"headers": headers}
         if path:
             httpupgrade_settings["path"] = path
         if host:
@@ -161,16 +165,17 @@ class XrayConfig(str):
         return tcp_settings
 
     @staticmethod
-    def h2_config(path=None, host=None):
+    def h2_config(path=None, host=None, headers=None):
         if host is None:
             host = []
         if path is None:
             path = "/"
-        http_settings = {"path": path}
-        if host:
-            http_settings["host"] = host
-        else:
-            http_settings["host"] = []
+        if headers is None:
+            headers = {}
+
+        http_settings = {"path": path, "host": host}
+        if headers:
+            http_settings["headers"] = headers
 
         return http_settings
 
@@ -223,7 +228,11 @@ class XrayConfig(str):
         header_type=None,
         grpc_multi_mode=False,
         dialer_proxy=None,
+        headers=None,
     ):
+        if headers is None:
+            headers = {}
+
         stream_settings = {"network": net}
 
         if net == "ws":
@@ -234,7 +243,7 @@ class XrayConfig(str):
             )
         elif net == "h2":
             stream_settings["httpSettings"] = XrayConfig.h2_config(
-                path=path, host=[host]
+                path=path, host=[host], headers=headers
             )
         elif net == "kcp":
             stream_settings["kcpSettings"] = XrayConfig.kcp_config(
