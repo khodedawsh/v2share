@@ -29,6 +29,8 @@ class XrayConfig(str):
             elif data.protocol == "vless":
                 if data.tls in ["reality", "tls"]:
                     flow = data.flow or "none"
+                else:
+                    flow = "none"
                 outbound["settings"] = XrayConfig.vless_config(
                     address=data.address, port=data.port, uuid=str(data.uuid), flow=flow
                 )
