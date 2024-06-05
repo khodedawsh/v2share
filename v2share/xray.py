@@ -72,6 +72,7 @@ class XrayConfig(str):
                 header_type=data.header_type,
                 grpc_multi_mode=data.grpc_multi_mode,
                 dialer_proxy=dialer_proxy,
+                headers=data.http_headers,
             )
 
             mux_config = json.loads(self._mux_template)
@@ -238,7 +239,9 @@ class XrayConfig(str):
         stream_settings = {"network": net}
 
         if net == "ws":
-            stream_settings["wsSettings"] = XrayConfig.ws_config(path=path, host=host)
+            stream_settings["wsSettings"] = XrayConfig.ws_config(
+                path=path, host=host, headers=headers
+            )
         elif net == "grpc":
             stream_settings["grpcSettings"] = XrayConfig.grpc_config(
                 service_name=path, multi_mode=grpc_multi_mode
@@ -261,7 +264,7 @@ class XrayConfig(str):
             )
         elif net == "httpupgrade":
             stream_settings["httpupgradeSettings"] = XrayConfig.httpupgrade_config(
-                path=path, host=host
+                path=path, host=host, headers=headers
             )
 
         if tls == "tls":
