@@ -270,7 +270,7 @@ class XrayConfig(str):
                 sni=sni, fingerprint=fp, alpn=alpn.split(",") if alpn else None, ais=ais
             )
         elif tls == "reality":
-            stream_settings["security"] = "xtls"
+            stream_settings["security"] = "reality"
             stream_settings["realitySettings"] = XrayConfig.reality_config(
                 pbk, sid, sni, fingerprint=fp
             )
