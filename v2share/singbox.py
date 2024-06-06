@@ -5,7 +5,7 @@ from typing import List
 from v2share.data import V2Data
 
 
-class SingBoxConfig(str):
+class SingBoxConfig:
     def __init__(self, template_path: str = None):
         if not template_path:
             template_path = resources.files("v2share.templates") / "singbox.json"
