@@ -182,6 +182,22 @@ class XrayConfig:
         return http_settings
 
     @staticmethod
+    def splithttp_config(path=None, host=None, headers=None):
+        if host is None:
+            host = []
+        if path is None:
+            path = "/"
+        if headers is None:
+            headers = {}
+
+        splithttp_settings = {"path": path, "headers": headers}
+
+        if host:
+            splithttp_settings["host"] = host
+
+        return splithttp_settings
+
+    @staticmethod
     def quic_config(security="none", key=None, header_type="none"):
 
         quic_settings = {
@@ -263,6 +279,10 @@ class XrayConfig:
             )
         elif net == "httpupgrade":
             stream_settings["httpupgradeSettings"] = XrayConfig.httpupgrade_config(
+                path=path, host=host, headers=headers
+            )
+        elif net == "splithttp":
+            stream_settings["splithttpSettings"] = XrayConfig.splithttp_config(
                 path=path, host=host, headers=headers
             )
 
