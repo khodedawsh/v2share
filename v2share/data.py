@@ -125,7 +125,7 @@ class V2Data:
                 "headerType": self.header_type,
             }
             if self.protocol == "vless" and self.flow:
-                payload.update({"flow": self.flow or "none"})
+                payload.update({"flow": self.flow or ""})
 
             self._apply_trojan_vless_transport(payload)
 

@@ -27,9 +27,9 @@ class XrayConfig:
                 )
             elif data.protocol == "vless":
                 if data.tls in ["reality", "tls"]:
-                    flow = data.flow or "none"
+                    flow = data.flow or ""
                 else:
-                    flow = "none"
+                    flow = ""
                 outbound["settings"] = XrayConfig.vless_config(
                     address=data.address, port=data.port, uuid=str(data.uuid), flow=flow
                 )
@@ -323,7 +323,7 @@ class XrayConfig:
         }
 
     @staticmethod
-    def vless_config(address, port, uuid, flow="none"):
+    def vless_config(address, port, uuid, flow=""):
 
         return {
             "vnext": [
