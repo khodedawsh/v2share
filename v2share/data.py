@@ -48,7 +48,7 @@ class V2Data:
                 }
             )
             if self.protocol in ["vless", "trojan"]:
-                payload.update({"allowInsecure": int(self.allow_insecure)})
+                payload.update({"allowInsecure": int(self.allow_insecure) or None})
         if self.tls == "tls":
             payload.update(
                 {
