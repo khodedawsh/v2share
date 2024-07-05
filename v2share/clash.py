@@ -28,7 +28,7 @@ class ClashConfig:
         result["proxies"] = self.data["proxies"]
         result["rules"] = self.data["rules"]
         result["proxy-groups"][0]["proxies"] = self.proxy_remarks
-        return yaml.safe_dump(result)
+        return yaml.safe_dump(result, sort_keys=False)
 
     def _remark_validation(self, remark, depth: int = 0):
         if remark not in self.proxy_remarks:
