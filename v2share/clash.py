@@ -3,14 +3,15 @@ from typing import List, Optional
 
 import yaml
 
+from v2share.base import BaseConfig
 from v2share.data import V2Data
 
 
-class ClashConfig:
+class ClashConfig(BaseConfig):
     def __init__(self, template_path: Optional[str] = None):
         if not template_path:
             template_path = resources.files("v2share.templates") / "clash.yml"
-        with open(template_path, "r") as f:
+        with open(template_path) as f:
             self.template_data = f.read()
         self.data = {
             "proxies": [],

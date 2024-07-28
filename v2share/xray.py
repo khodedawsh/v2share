@@ -2,10 +2,11 @@ import json
 from importlib import resources
 from typing import List
 
+from v2share.base import BaseConfig
 from v2share.data import V2Data
 
 
-class XrayConfig:
+class XrayConfig(BaseConfig):
     def __init__(self, template_path: str = None, mux_template_path: str = None):
         self.config = []
         if not template_path:

@@ -2,10 +2,11 @@ import json
 from importlib import resources
 from typing import List
 
+from v2share.base import BaseConfig
 from v2share.data import V2Data
 
 
-class SingBoxConfig:
+class SingBoxConfig(BaseConfig):
     def __init__(self, template_path: str = None):
         if not template_path:
             template_path = resources.files("v2share.templates") / "singbox.json"

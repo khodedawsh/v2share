@@ -1,0 +1,14 @@
+from abc import ABC, abstractmethod
+from typing import List
+
+from v2share import V2Data
+
+
+class BaseConfig(ABC):
+    @abstractmethod
+    def render(self) -> str:
+        pass
+
+    @abstractmethod
+    def add_proxies(self, proxies: List[V2Data]) -> None:
+        pass

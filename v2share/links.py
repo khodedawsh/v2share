@@ -1,9 +1,10 @@
 from typing import List
 
+from v2share.base import BaseConfig
 from v2share.data import V2Data
 
 
-class LinksConfig:
+class LinksConfig(BaseConfig):
     def __init__(self):
         self._links = []
 
