@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from v2share import V2Data
+from .data import V2Data
 
 
 class BaseConfig(ABC):
