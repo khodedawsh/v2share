@@ -47,6 +47,8 @@ class XrayConfig(BaseConfig):
                     password=data.password,
                     method=data.shadowsocks_method,
                 )
+            else:
+                continue
 
             outbounds = [outbound]
             dialer_proxy = None

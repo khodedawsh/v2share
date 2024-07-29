@@ -158,5 +158,11 @@ class SingBoxConfig(BaseConfig):
             elif data.protocol == "shadowsocks":
                 outbound["password"] = data.password
                 outbound["method"] = data.shadowsocks_method
+            elif data.protocol == "hysteria2":
+                outbound["password"] = data.password
+                if data.header_type:
+                    outbound["obfs"] = {"type": data.header_type, "password": data.path}
+            else:
+                continue
 
             self._outbounds.append(outbound)
