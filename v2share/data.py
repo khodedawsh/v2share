@@ -6,6 +6,7 @@ from typing import Optional, Dict
 from uuid import UUID
 
 from v2share._utils import filter_dict
+from v2share.exceptions import ProtocolNotSupportedError
 
 
 @dataclass
@@ -93,7 +94,7 @@ class V2Data:
                 + f"#{urlparse.quote(self.remark)}"
             )
 
-        elif self.protocol == "vmess":
+        if self.protocol == "vmess":
             payload = {
                 "add": self.address,
                 "aid": "0",
@@ -118,7 +119,7 @@ class V2Data:
                 ).decode()
             )
 
-        elif self.protocol in ["trojan", "vless"]:
+        if self.protocol in ["trojan", "vless"]:
             payload = {
                 "security": self.tls,
                 "type": self.transport_type,
@@ -144,3 +145,5 @@ class V2Data:
                 + urlparse.urlencode(payload)
                 + f"#{(urlparse.quote(self.remark))}"
             )
+
+        raise ProtocolNotSupportedError

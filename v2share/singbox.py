@@ -4,15 +4,17 @@ from typing import List
 
 from v2share.base import BaseConfig
 from v2share.data import V2Data
+from v2share.exceptions import ProtocolNotSupportedError
 
 
 class SingBoxConfig(BaseConfig):
-    def __init__(self, template_path: str = None):
+    def __init__(self, template_path: str = None, swallow_errors=True):
         if not template_path:
             template_path = resources.files("v2share.templates") / "singbox.json"
         with open(template_path) as f:
             self._template_data = f.read()
         self._outbounds = []
+        self._swallow_errors = swallow_errors
 
     def render(self):
         result = json.loads(self._template_data)
@@ -163,6 +165,8 @@ class SingBoxConfig(BaseConfig):
                 if data.header_type:
                     outbound["obfs"] = {"type": data.header_type, "password": data.path}
             else:
-                continue
+                if self._swallow_errors:
+                    continue
+                raise ProtocolNotSupportedError
 
             self._outbounds.append(outbound)

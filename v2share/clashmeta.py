@@ -1,5 +1,6 @@
 from v2share.clash import ClashConfig
 from v2share.data import V2Data
+from v2share.exceptions import ProtocolNotSupportedError
 
 
 class ClashMetaConfig(ClashConfig):
@@ -70,7 +71,7 @@ class ClashMetaConfig(ClashConfig):
             self.data["proxies"].append(node)
             self.proxy_remarks.append(config.remark)
 
-        if config.protocol == "vless":
+        elif config.protocol == "vless":
             node["uuid"] = str(config.uuid)
 
             if config.transport_type in ("tcp", "kcp") and config.header_type != "http":
@@ -79,7 +80,7 @@ class ClashMetaConfig(ClashConfig):
             self.data["proxies"].append(node)
             self.proxy_remarks.append(config.remark)
 
-        if config.protocol == "trojan":
+        elif config.protocol == "trojan":
             node["password"] = config.password
 
             if (
@@ -92,8 +93,10 @@ class ClashMetaConfig(ClashConfig):
             self.data["proxies"].append(node)
             self.proxy_remarks.append(config.remark)
 
-        if config.protocol == "shadowsocks":
+        elif config.protocol == "shadowsocks":
             node["password"] = config.password
             node["cipher"] = config.shadowsocks_method
             self.data["proxies"].append(node)
             self.proxy_remarks.append(config.remark)
+        else:
+            raise ProtocolNotSupportedError

@@ -5,10 +5,11 @@ import yaml
 
 from v2share.base import BaseConfig
 from v2share.data import V2Data
+from v2share.exceptions import ProtocolNotSupportedError, NotSupportedError
 
 
 class ClashConfig(BaseConfig):
-    def __init__(self, template_path: Optional[str] = None):
+    def __init__(self, template_path: Optional[str] = None, swallow_errors=True):
         if not template_path:
             template_path = resources.files("v2share.templates") / "clash.yml"
         with open(template_path) as f:
@@ -19,10 +20,16 @@ class ClashConfig(BaseConfig):
             "rules": [],
         }
         self.proxy_remarks = []
+        self._swallow_errors = swallow_errors
 
     def add_proxies(self, proxies: List[V2Data]):
         for proxy in proxies:
-            self._add_node(proxy)
+            try:
+                self._add_node(proxy)
+            except NotSupportedError:
+                if self._swallow_errors:
+                    continue
+                raise
 
     def render(self):
         result = yaml.safe_load(self.template_data)
@@ -97,7 +104,7 @@ class ClashConfig(BaseConfig):
             if host:
                 net_opts["host"] = [host]
 
-        if network == "http" or network == "tcp":
+        if network in {"http", "tcp"}:
             if path:
                 net_opts["method"] = "GET"
                 net_opts["path"] = [path]
@@ -138,3 +145,5 @@ class ClashConfig(BaseConfig):
             node["cipher"] = config.shadowsocks_method
             self.data["proxies"].append(node)
             self.proxy_remarks.append(config.remark)
+        else:
+            raise ProtocolNotSupportedError

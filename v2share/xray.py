@@ -4,11 +4,18 @@ from typing import List
 
 from v2share.base import BaseConfig
 from v2share.data import V2Data
+from v2share.exceptions import ProtocolNotSupportedError
 
 
 class XrayConfig(BaseConfig):
-    def __init__(self, template_path: str = None, mux_template_path: str = None):
+    def __init__(
+        self,
+        template_path: str = None,
+        mux_template_path: str = None,
+        swallow_errors=True,
+    ):
         self.config = []
+        self._swallow_errors = swallow_errors
         if not template_path:
             template_path = resources.files("v2share.templates") / "xray.json"
         if not mux_template_path:
@@ -48,7 +55,9 @@ class XrayConfig(BaseConfig):
                     method=data.shadowsocks_method,
                 )
             else:
-                continue
+                if self._swallow_errors:
+                    continue
+                raise ProtocolNotSupportedError
 
             outbounds = [outbound]
             dialer_proxy = None
@@ -105,7 +114,7 @@ class XrayConfig(BaseConfig):
     @staticmethod
     def reality_config(public_key, short_id, sni, fingerprint="", spiderx=""):
 
-        realitySettings = {
+        return {
             "serverName": sni,
             "fingerprint": fingerprint,
             "show": False,
@@ -113,8 +122,6 @@ class XrayConfig(BaseConfig):
             "shortId": short_id,
             "spiderX": spiderx,
         }
-
-        return realitySettings
 
     @staticmethod
     def ws_config(path=None, host=None, headers=None):
