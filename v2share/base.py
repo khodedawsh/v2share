@@ -6,7 +6,7 @@ from .data import V2Data
 
 class BaseConfig(ABC):
     @abstractmethod
-    def render(self) -> str:
+    def render(self, sort: bool, shuffle: bool) -> str:
         pass
 
     @abstractmethod
