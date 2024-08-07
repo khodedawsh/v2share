@@ -1,10 +1,27 @@
 import json
+import random
 from importlib import resources
 from typing import List
 
 from v2share.base import BaseConfig
 from v2share.data import V2Data
-from v2share.exceptions import ProtocolNotSupportedError
+from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
+
+supported_transports = [
+    "tcp",
+    "kcp",
+    "mkcp",
+    "ws",
+    "websocket",
+    "http",
+    "h2",
+    "quic",
+    "grpc",
+    "gun",
+    "httpupgrade",
+    "splithttp",
+]
+supported_protocols = ["vmess", "vless", "trojan", "shadowsocks"]
 
 
 class XrayConfig(BaseConfig):
@@ -15,6 +32,7 @@ class XrayConfig(BaseConfig):
         swallow_errors=True,
     ):
         self.config = []
+        self._configs = []
         self._swallow_errors = swallow_errors
         if not template_path:
             template_path = resources.files("v2share.templates") / "xray.json"
@@ -26,7 +44,31 @@ class XrayConfig(BaseConfig):
             self._mux_template = f.read()
 
     def add_proxies(self, proxies: List[V2Data]):
-        for data in proxies:
+        for proxy in proxies:
+            # validation
+            if (
+                unsupported_transport := proxy.transport_type
+                not in supported_transports
+            ) or (unsupported_protocol := proxy.protocol not in supported_protocols):
+                if self._swallow_errors:
+                    continue
+                if unsupported_transport:
+                    raise TransportNotSupportedError
+                if unsupported_protocol:
+                    raise ProtocolNotSupportedError
+
+            self._configs.append(proxy)
+
+    def render(self, sort: bool = True, shuffle: bool = False):
+        if shuffle is True:
+            configs = random.sample(self._configs, len(self._configs))
+        elif sort is True:
+            configs = sorted(self._configs, key=lambda config: config.weight)
+        else:
+            configs = self._configs
+
+        xray_configs = []
+        for data in configs:
             outbound = {"tag": data.remark, "protocol": data.protocol}
 
             if data.protocol == "vmess":
@@ -34,7 +76,7 @@ class XrayConfig(BaseConfig):
                     address=data.address, port=data.port, uuid=str(data.uuid)
                 )
             elif data.protocol == "vless":
-                if data.tls in ["reality", "tls"]:
+                if data.tls in {"reality", "tls"}:
                     flow = data.flow or ""
                 else:
                     flow = ""
@@ -54,10 +96,6 @@ class XrayConfig(BaseConfig):
                     password=data.password,
                     method=data.shadowsocks_method,
                 )
-            else:
-                if self._swallow_errors:
-                    continue
-                raise ProtocolNotSupportedError
 
             outbounds = [outbound]
             dialer_proxy = None
@@ -91,12 +129,14 @@ class XrayConfig(BaseConfig):
             outbound["mux"] = mux_config
 
             json_template = json.loads(self._template)
-            json_template["remarks"] = data.remark
-            json_template["outbounds"] = outbounds + json_template["outbounds"]
-            self.config.append(json_template)
-
-    def render(self):
-        return json.dumps(self.config, indent=4)
+            complete_config = json_template.update(
+                {
+                    "remorks": data.remark,
+                    "outbounds": outbounds + json_template["outbounds"],
+                }
+            )
+            xray_configs.append(complete_config)
+        return json.dumps(xray_configs, indent=4)
 
     @staticmethod
     def tls_config(sni, fingerprint, alpn=None, ais=False):
@@ -150,17 +190,15 @@ class XrayConfig(BaseConfig):
         return httpupgrade_settings
 
     @staticmethod
-    def grpc_config(service_name=None, multi_mode=False):
+    def grpc_config(authority=None, service_name=None, multi_mode=False):
 
         grpc_settings = {
-            "multi_mode": multi_mode,
-            "idle_timeout": 60,
-            "health_check_timeout": 20,
-            "permit_without_stream": False,
-            "initial_windows_size": 0,
+            "multiMode": multi_mode,
         }
         if service_name:
             grpc_settings["serviceName"] = service_name
+        if authority:
+            grpc_settings["authority"] = authority
         return grpc_settings
 
     @staticmethod
@@ -225,13 +263,6 @@ class XrayConfig(BaseConfig):
 
         kcp_settings = {
             "header": {},
-            "mtu": 1350,
-            "tti": 50,
-            "uplinkCapacity": 12,
-            "downlinkCapacity": 100,
-            "congestion": False,
-            "readBufferSize": 2,
-            "writeBufferSize": 2,
         }
 
         if seed:
@@ -263,19 +294,19 @@ class XrayConfig(BaseConfig):
 
         stream_settings = {"network": net}
 
-        if net == "ws":
+        if net in {"ws", "websocket"}:
             stream_settings["wsSettings"] = XrayConfig.ws_config(
                 path=path, host=host, headers=headers
             )
-        elif net == "grpc":
+        elif net in {"grpc", "gun"}:
             stream_settings["grpcSettings"] = XrayConfig.grpc_config(
-                service_name=path, multi_mode=grpc_multi_mode
+                authority=host, service_name=path, multi_mode=grpc_multi_mode
             )
-        elif net == "h2":
+        elif net in {"h2", "http"}:
             stream_settings["httpSettings"] = XrayConfig.h2_config(
                 path=path, host=[host], headers=headers
             )
-        elif net == "kcp":
+        elif net in {"kcp", "mkcp"}:
             stream_settings["kcpSettings"] = XrayConfig.kcp_config(
                 seed=path, header_type=header_type
             )
@@ -315,7 +346,7 @@ class XrayConfig(BaseConfig):
         return stream_settings
 
     @staticmethod
-    def vmess_config(address, port, uuid):
+    def vmess_config(address: str, port: int, uuid: str):
 
         return {
             "vnext": [

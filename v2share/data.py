@@ -39,6 +39,7 @@ class V2Data:
     fragment_interval: str = "10-20"
     enable_mux: bool = False
     allow_insecure: bool = False
+    weight: int = 1
 
     def _apply_tls_settings(self, payload):
         if self.tls in ["tls", "reality"]:

@@ -1,10 +1,14 @@
 import json
+import random
 from importlib import resources
 from typing import List
 
 from v2share.base import BaseConfig
 from v2share.data import V2Data
-from v2share.exceptions import ProtocolNotSupportedError
+from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
+
+supported_protocols = ["shadowsocks", "vmess", "trojan", "vless", "hysteria2"]
+supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc"]
 
 
 class SingBoxConfig(BaseConfig):
@@ -15,10 +19,20 @@ class SingBoxConfig(BaseConfig):
             self._template_data = f.read()
         self._outbounds = []
         self._swallow_errors = swallow_errors
+        self._configs: List[V2Data] = []
 
-    def render(self):
-        result = json.loads(self._template_data)
-        result["outbounds"].extend(self._outbounds)
+    def render(self, sort: bool = True, shuffle: bool = False):
+        if shuffle is True:
+            configs = random.sample(self._configs, len(self._configs))
+        elif sort is True:
+            configs = sorted(self._configs, key=lambda config: config.weight)
+        else:
+            configs = self._configs
+
+        result = json.loads(configs)
+        result["outbounds"].extend(
+            [self.create_outbound(config) for config in self._configs]
+        )
         urltest_types = ["vmess", "vless", "trojan", "shadowsocks"]
         urltest_tags = [
             outbound["tag"]
@@ -117,56 +131,67 @@ class SingBoxConfig(BaseConfig):
 
         return transport_config
 
+    @staticmethod
+    def create_outbound(config: V2Data):
+        outbound = {
+            "type": config.protocol,
+            "tag": config.remark,
+            "server": config.address,
+            "server_port": config.port,
+        }
+        if (
+            config.protocol == "vless"
+            and config.flow
+            and config.tls in ["tls", "reality"]
+        ):
+            outbound["flow"] = config.flow
+
+        if config.transport_type in ["http", "ws", "quic", "grpc", "httpupgrade"]:
+            outbound["transport"] = SingBoxConfig.transport_config(
+                transport_type=config.transport_type,
+                host=config.host,
+                path=config.path,
+                headers=config.http_headers,
+            )
+
+        if config.tls in ("tls", "reality"):
+            outbound["tls"] = SingBoxConfig.tls_config(
+                sni=config.sni,
+                fp=config.fingerprint,
+                tls=config.tls,
+                pbk=config.reality_pbk,
+                sid=config.reality_sid,
+                alpn=config.alpn,
+                ais=config.allow_insecure,
+            )
+
+        if config.protocol in ["vless", "vmess"]:
+            outbound["uuid"] = str(config.uuid)
+
+        elif config.protocol == "trojan":
+            outbound["password"] = config.password
+
+        elif config.protocol == "shadowsocks":
+            outbound["password"] = config.password
+            outbound["method"] = config.shadowsocks_method
+        elif config.protocol == "hysteria2":
+            outbound["password"] = config.password
+            if config.header_type:
+                outbound["obfs"] = {"type": config.header_type, "password": config.path}
+        return outbound
+
     def add_proxies(self, proxies: List[V2Data]):
-        for data in proxies:
-            outbound = {
-                "type": data.protocol,
-                "tag": data.remark,
-                "server": data.address,
-                "server_port": data.port,
-            }
+        for proxy in proxies:
+            # validation
             if (
-                data.protocol == "vless"
-                and data.flow
-                and data.tls in ["tls", "reality"]
-            ):
-                outbound["flow"] = data.flow
-
-            if data.transport_type in ["http", "ws", "quic", "grpc", "httpupgrade"]:
-                outbound["transport"] = SingBoxConfig.transport_config(
-                    transport_type=data.transport_type,
-                    host=data.host,
-                    path=data.path,
-                    headers=data.http_headers,
-                )
-
-            if data.tls in ("tls", "reality"):
-                outbound["tls"] = SingBoxConfig.tls_config(
-                    sni=data.sni,
-                    fp=data.fingerprint,
-                    tls=data.tls,
-                    pbk=data.reality_pbk,
-                    sid=data.reality_sid,
-                    alpn=data.alpn,
-                    ais=data.allow_insecure,
-                )
-
-            if data.protocol in ["vless", "vmess"]:
-                outbound["uuid"] = str(data.uuid)
-
-            elif data.protocol == "trojan":
-                outbound["password"] = data.password
-
-            elif data.protocol == "shadowsocks":
-                outbound["password"] = data.password
-                outbound["method"] = data.shadowsocks_method
-            elif data.protocol == "hysteria2":
-                outbound["password"] = data.password
-                if data.header_type:
-                    outbound["obfs"] = {"type": data.header_type, "password": data.path}
-            else:
+                unsupported_transport := proxy.transport_type
+                not in supported_transports
+            ) or (unsupported_protocol := proxy.protocol not in supported_protocols):
                 if self._swallow_errors:
                     continue
-                raise ProtocolNotSupportedError
+                if unsupported_transport:
+                    raise TransportNotSupportedError
+                if unsupported_protocol:
+                    raise ProtocolNotSupportedError
 
-            self._outbounds.append(outbound)
+            self._configs.append(proxy)

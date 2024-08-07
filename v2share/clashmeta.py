@@ -1,13 +1,18 @@
+from typing import List
+
 from v2share.clash import ClashConfig
 from v2share.data import V2Data
-from v2share.exceptions import ProtocolNotSupportedError
+from v2share.exceptions import TransportNotSupportedError, ProtocolNotSupportedError
+
+supported_transports = ["tcp", "http", "ws", "grpc", "h2"]
+supported_protocols = ["vmess", "trojan", "shadowsocks", "vless"]
 
 
 class ClashMetaConfig(ClashConfig):
     def _make_node(
         self,
         name: str,
-        type: str,
+        protocol: str,
         server: str,
         port: int,
         network: str,
@@ -25,7 +30,7 @@ class ClashMetaConfig(ClashConfig):
     ):
         node = super()._make_node(
             name=name,
-            type=type,
+            protocol=protocol,
             server=server,
             port=port,
             network=network,
@@ -44,10 +49,10 @@ class ClashMetaConfig(ClashConfig):
 
         return node
 
-    def _add_node(self, config: V2Data):
+    def _get_node(self, config: V2Data):
         node = self._make_node(
             name=config.remark,
-            type=config.protocol,
+            protocol=config.protocol,
             server=config.address,
             port=config.port,
             network=config.transport_type,
@@ -68,8 +73,6 @@ class ClashMetaConfig(ClashConfig):
             node["uuid"] = str(config.uuid)
             node["alterId"] = 0
             node["cipher"] = "auto"
-            self.data["proxies"].append(node)
-            self.proxy_remarks.append(config.remark)
 
         elif config.protocol == "vless":
             node["uuid"] = str(config.uuid)
@@ -77,26 +80,26 @@ class ClashMetaConfig(ClashConfig):
             if config.transport_type in ("tcp", "kcp") and config.header_type != "http":
                 node["flow"] = config.flow
 
-            self.data["proxies"].append(node)
-            self.proxy_remarks.append(config.remark)
-
         elif config.protocol == "trojan":
             node["password"] = config.password
-
-            if (
-                config.transport_type in ("tcp", "kcp")
-                and config.header_type != "http"
-                and config.tls
-            ):
-                node["flow"] = config.flow
-
-            self.data["proxies"].append(node)
-            self.proxy_remarks.append(config.remark)
 
         elif config.protocol == "shadowsocks":
             node["password"] = config.password
             node["cipher"] = config.shadowsocks_method
-            self.data["proxies"].append(node)
-            self.proxy_remarks.append(config.remark)
-        else:
-            raise ProtocolNotSupportedError
+        return node
+
+    def add_proxies(self, proxies: List[V2Data]):
+        for proxy in proxies:
+            # validation
+            if (
+                unsupported_transport := proxy.transport_type
+                not in supported_transports
+            ) or (unsupported_protocol := proxy.protocol not in supported_protocols):
+                if self._swallow_errors:
+                    continue
+                if unsupported_transport:
+                    raise TransportNotSupportedError
+                if unsupported_protocol:
+                    raise ProtocolNotSupportedError
+
+            self._configs.append(proxy)

@@ -1,11 +1,15 @@
+import random
 from importlib import resources
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import yaml
 
 from v2share.base import BaseConfig
 from v2share.data import V2Data
-from v2share.exceptions import ProtocolNotSupportedError, NotSupportedError
+from v2share.exceptions import TransportNotSupportedError, ProtocolNotSupportedError
+
+supported_transports = ["tcp", "http", "ws", "grpc", "h2"]
+supported_protocols = ["vmess", "trojan", "shadowsocks"]
 
 
 class ClashConfig(BaseConfig):
@@ -14,39 +18,48 @@ class ClashConfig(BaseConfig):
             template_path = resources.files("v2share.templates") / "clash.yml"
         with open(template_path) as f:
             self.template_data = f.read()
-        self.data = {
-            "proxies": [],
-            "proxy-groups": [],
-            "rules": [],
-        }
-        self.proxy_remarks = []
         self._swallow_errors = swallow_errors
+        self._configs = []
 
     def add_proxies(self, proxies: List[V2Data]):
         for proxy in proxies:
-            try:
-                self._add_node(proxy)
-            except NotSupportedError:
+            # validation
+            if (
+                unsupported_transport := proxy.transport_type
+                not in supported_transports
+            ) or (unsupported_protocol := proxy.protocol not in supported_protocols):
                 if self._swallow_errors:
                     continue
-                raise
+                if unsupported_transport:
+                    raise TransportNotSupportedError
+                if unsupported_protocol:
+                    raise ProtocolNotSupportedError
 
-    def render(self):
+            self._configs.append(proxy)
+
+    def render(self, sort: bool = True, shuffle: bool = False):
+        if shuffle is True:
+            configs = random.sample(self._configs, len(self._configs))
+        elif sort is True:
+            configs = sorted(self._configs, key=lambda config: config.weight)
+        else:
+            configs = self._configs
+
+        proxies, remarks = [] * 2
+        for proxy in configs:
+            proxies.append(self._get_node(proxy))
+            remarks.append(proxy.remark)
+
         result = yaml.safe_load(self.template_data)
-        result["proxies"] = self.data["proxies"]
-        result["rules"] = self.data["rules"]
-        result["proxy-groups"][0]["proxies"] = self.proxy_remarks
+        result["proxies"] = proxies
+        result["rules"] = []
+        result["proxy-groups"][0]["proxies"] = remarks
         return yaml.safe_dump(result, sort_keys=False)
-
-    def _remark_validation(self, remark, depth: int = 0):
-        if remark not in self.proxy_remarks:
-            return remark
-        return self._remark_validation(f"{remark} {depth}", depth + 1)
 
     def _make_node(
         self,
         name: str,
-        type: str,
+        protocol: str,
         server: str,
         port: int,
         network: str,
@@ -58,13 +71,12 @@ class ClashConfig(BaseConfig):
         alpn: str = "",
         ais: bool = "",
     ):
-        if type == "shadowsocks":
-            type = "ss"
+        if protocol == "shadowsocks":
+            protocol = "ss"
 
-        remark = self._remark_validation(name)
         node = {
-            "name": remark,
-            "type": type,
+            "name": name,
+            "type": protocol,
             "server": server,
             "port": port,
             "network": network,
@@ -114,10 +126,10 @@ class ClashConfig(BaseConfig):
 
         return node
 
-    def _add_node(self, config: V2Data):
+    def _get_node(self, config: V2Data) -> Dict:
         node = self._make_node(
             name=config.remark,
-            type=config.protocol,
+            protocol=config.protocol,
             server=config.address,
             port=config.port,
             network=config.transport_type,
@@ -134,16 +146,10 @@ class ClashConfig(BaseConfig):
             node["uuid"] = str(config.uuid)
             node["alterId"] = 0
             node["cipher"] = "auto"
-            self.data["proxies"].append(node)
-            self.proxy_remarks.append(config.remark)
         elif config.protocol == "trojan":
             node["password"] = config.password
-            self.data["proxies"].append(node)
-            self.proxy_remarks.append(config.remark)
         elif config.protocol == "shadowsocks":
             node["password"] = config.password
             node["cipher"] = config.shadowsocks_method
-            self.data["proxies"].append(node)
-            self.proxy_remarks.append(config.remark)
-        else:
-            raise ProtocolNotSupportedError
+
+        return node
