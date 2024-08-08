@@ -45,7 +45,7 @@ class ClashConfig(BaseConfig):
         else:
             configs = self._configs
 
-        proxies, remarks = [] * 2
+        proxies, remarks = [], []
         for proxy in configs:
             proxies.append(self._get_node(proxy))
             remarks.append(proxy.remark)
