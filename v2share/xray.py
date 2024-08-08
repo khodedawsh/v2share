@@ -129,12 +129,13 @@ class XrayConfig(BaseConfig):
             outbound["mux"] = mux_config
 
             json_template = json.loads(self._template)
-            complete_config = json_template.update(
-                {
+            complete_config = {
+                **json_template,
+                **{
                     "remorks": data.remark,
                     "outbounds": outbounds + json_template["outbounds"],
-                }
-            )
+                },
+            }
             xray_configs.append(complete_config)
         return json.dumps(xray_configs, indent=4)
 
