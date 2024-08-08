@@ -8,7 +8,7 @@ from v2share.data import V2Data
 from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
 
 supported_protocols = ["shadowsocks", "vmess", "trojan", "vless", "hysteria2"]
-supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc"]
+supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc", None]
 
 
 class SingBoxConfig(BaseConfig):
