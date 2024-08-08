@@ -29,10 +29,8 @@ class SingBoxConfig(BaseConfig):
         else:
             configs = self._configs
 
-        result = json.loads(configs)
-        result["outbounds"].extend(
-            [self.create_outbound(config) for config in self._configs]
-        )
+        result = json.loads(self._template_data)
+        result["outbounds"].extend([self.create_outbound(config) for config in configs])
         urltest_types = ["vmess", "vless", "trojan", "shadowsocks"]
         urltest_tags = [
             outbound["tag"]
