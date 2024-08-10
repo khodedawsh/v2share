@@ -132,7 +132,7 @@ class XrayConfig(BaseConfig):
             complete_config = {
                 **json_template,
                 **{
-                    "remorks": data.remark,
+                    "remarks": data.remark,
                     "outbounds": outbounds + json_template["outbounds"],
                 },
             }
