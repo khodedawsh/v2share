@@ -31,13 +31,21 @@ class SingBoxConfig(BaseConfig):
 
         result = json.loads(self._template_data)
         result["outbounds"].extend([self.create_outbound(config) for config in configs])
-        urltest_types = ["vmess", "vless", "trojan", "shadowsocks"]
+
+        urltest_types = ["hysteria2", "vmess", "vless", "trojan", "shadowsocks"]
         urltest_tags = [
             outbound["tag"]
             for outbound in result["outbounds"]
             if outbound["type"] in urltest_types
         ]
-        selector_types = ["vmess", "vless", "trojan", "shadowsocks", "urltest"]
+        selector_types = [
+            "hysteria2",
+            "vmess",
+            "vless",
+            "trojan",
+            "shadowsocks",
+            "urltest",
+        ]
         selector_tags = [
             outbound["tag"]
             for outbound in result["outbounds"]
