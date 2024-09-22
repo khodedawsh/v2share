@@ -14,6 +14,7 @@ supported_transports = [
     "grpc",
     "httpupgrade",
     "splithttp",
+    None,
 ]
 supported_protocols = ["vmess", "vless", "trojan", "shadowsocks", "hysteria2"]
 
