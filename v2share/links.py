@@ -15,7 +15,7 @@ supported_transports = [
     "httpupgrade",
     "splithttp",
 ]
-supported_protocols = ["vmess", "vless", "trojan", "shadowsocks"]
+supported_protocols = ["vmess", "vless", "trojan", "shadowsocks", "hysteria2"]
 
 
 class LinksConfig(BaseConfig):

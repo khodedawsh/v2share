@@ -147,4 +147,19 @@ class V2Data:
                 + f"#{(urlparse.quote(self.remark))}"
             )
 
+        if self.protocol == "hysteria2":
+            payload = {"sni": self.sni}
+            if self.header_type:
+                payload.update({"obfs": self.header_type})
+                payload.update({"obfs-password": self.path})
+            if self.allow_insecure:
+                payload.update({"insecure": "1"})
+
+            return (
+                "hysteria2://"
+                + f"{self.password}@{self.address}:{self.port}?"
+                + urlparse.urlencode(payload)
+                + f"#{(urlparse.quote(self.remark))}"
+            )
+
         raise ProtocolNotSupportedError
