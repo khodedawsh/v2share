@@ -19,6 +19,7 @@ class V2Data:
     uuid: Optional[UUID] = None
     vmess_security: str = "auto"
     password: Optional[str] = None
+    ed25519: Optional[str] = None
     host: Optional[str] = None
     http_headers: Dict[str, str] = field(default_factory=dict)
     transport_type: str = "tcp"
@@ -162,4 +163,12 @@ class V2Data:
                 + f"#{(urlparse.quote(self.remark))}"
             )
 
+        if self.protocol == "wireguard":
+            payload = {"publickey": self.path, "address": self.host}
+            return (
+                    "wireguard://"
+                    + f"{self.ed25519}@{self.address}:{self.port}?"
+                    + urlparse.urlencode(payload)
+                    + f"#{(urlparse.quote(self.remark))}"
+            )
         raise ProtocolNotSupportedError
