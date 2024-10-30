@@ -5,4 +5,11 @@ from .singbox import SingBoxConfig
 from .wireguard import WireGuardConfig
 from .xray import XrayConfig
 
-__all__ = ["V2Data", "SingBoxConfig", "ClashConfig", "ClashMetaConfig", "XrayConfig"]
+__all__ = [
+    "V2Data",
+    "SingBoxConfig",
+    "ClashConfig",
+    "ClashMetaConfig",
+    "XrayConfig",
+    "WireGuardConfig",
+]

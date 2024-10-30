@@ -173,6 +173,8 @@ class V2Data:
 
         if self.protocol == "wireguard":
             payload = {"publickey": self.path, "address": self.client_address}
+            if isinstance(self.mtu, int):
+                payload.update({"mtu": self.mtu})
             return (
                 "wireguard://"
                 + f"{self.ed25519}@{self.address}:{self.port}?"

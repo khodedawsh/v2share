@@ -21,7 +21,7 @@ class WireGuardConfig(BaseConfig):
             config += "PrivateKey = " + proxy.ed25519 + "\n"
             if proxy.mtu is not None:
                 config += "MTU = " + str(proxy.mtu) + "\n"
-            if proxy.dns_servers is not None:
+            if proxy.dns_servers:
                 config += "DNS = " + ",".join(proxy.dns_servers) + "\n"
             config += "\n"
             config += "[Peer]\nPublicKey = " + proxy.path + "\n"
