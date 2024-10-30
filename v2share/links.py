@@ -16,7 +16,15 @@ supported_transports = [
     "splithttp",
     None,
 ]
-supported_protocols = ["vmess", "vless", "trojan", "shadowsocks", "hysteria2", "wireguard"]
+supported_protocols = [
+    "vmess",
+    "vless",
+    "trojan",
+    "shadowsocks",
+    "hysteria2",
+    "wireguard",
+    "tuic",
+]
 
 
 class LinksConfig(BaseConfig):

@@ -2,7 +2,7 @@ import base64
 import json
 import urllib.parse as urlparse
 from dataclasses import dataclass, field
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from uuid import UUID
 
 from v2share._utils import filter_dict
@@ -39,6 +39,11 @@ class V2Data:
     fragment_packets: str = "tlshello"
     fragment_length: str = "100-200"
     fragment_interval: str = "10-20"
+    mtu: Optional[int] = None
+    dns_servers: Optional[List[str]] = None
+    congestion_control: Optional[str] = None
+    tuic_udp_relay_mode: Optional[str] = None
+    disable_sni: bool = False
     enable_mux: bool = False
     allow_insecure: bool = False
     weight: int = 1
@@ -154,6 +159,8 @@ class V2Data:
             if self.header_type:
                 payload.update({"obfs": self.header_type})
                 payload.update({"obfs-password": self.path})
+            if self.disable_sni:
+                payload.update({"disable_sni": "1"})
             if self.allow_insecure:
                 payload.update({"insecure": "1"})
 
@@ -167,9 +174,29 @@ class V2Data:
         if self.protocol == "wireguard":
             payload = {"publickey": self.path, "address": self.client_address}
             return (
-                    "wireguard://"
-                    + f"{self.ed25519}@{self.address}:{self.port}?"
-                    + urlparse.urlencode(payload)
-                    + f"#{(urlparse.quote(self.remark))}"
+                "wireguard://"
+                + f"{self.ed25519}@{self.address}:{self.port}?"
+                + urlparse.urlencode(payload)
+                + f"#{(urlparse.quote(self.remark))}"
+            )
+
+        if self.protocol == "tuic":
+            payload = {
+                "sni": self.sni,
+                "udp_relay_mode": self.tuic_udp_relay_mode,
+                "congestion_control": self.congestion_control,
+                "alpn": self.alpn,
+            }
+            if self.allow_insecure:
+                payload.update({"insecure": "1"})
+            if self.disable_sni:
+                payload.update({"disable_sni": "1"})
+
+            payload = filter_dict(payload, ("", None))
+            return (
+                "tuic://"
+                + f"{self.uuid}:{self.password}@{self.address}:{self.port}?"
+                + urlparse.urlencode(payload)
+                + f"#{(urlparse.quote(self.remark))}"
             )
         raise ProtocolNotSupportedError
