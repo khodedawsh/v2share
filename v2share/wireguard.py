@@ -26,7 +26,12 @@ class WireGuardConfig(BaseConfig):
             config += "\n"
             config += "[Peer]\nPublicKey = " + proxy.path + "\n"
             config += "Endpoint = " + proxy.address + ":" + str(proxy.port) + "\n"
-            config += "AllowedIPs = " + "0.0.0.0/0, ::/0" + "\n"
+            config += "AllowedIPs = "
+            if not proxy.allowed_ips:
+                config += "0.0.0.0/0, ::/0" + "\n"
+            else:
+                config += ", ".join(proxy.allowed_ips) + "\n"
+            config += "PersistentKeepalive = 25\n"
             result.append({"remark": proxy.remark, "config": config})
         return json.dumps(result)
 

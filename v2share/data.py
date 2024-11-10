@@ -41,6 +41,7 @@ class V2Data:
     fragment_interval: str = "10-20"
     mtu: Optional[int] = None
     dns_servers: Optional[List[str]] = None
+    allowed_ips: Optional[List[str]] = None
     congestion_control: Optional[str] = None
     tuic_udp_relay_mode: Optional[str] = None
     disable_sni: bool = False

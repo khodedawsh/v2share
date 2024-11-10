@@ -7,7 +7,14 @@ from v2share.base import BaseConfig
 from v2share.data import V2Data
 from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
 
-supported_protocols = ["shadowsocks", "vmess", "trojan", "vless", "hysteria2"]
+supported_protocols = [
+    "shadowsocks",
+    "vmess",
+    "trojan",
+    "vless",
+    "hysteria2",
+    "wireguard",
+]
 supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc", None]
 
 
@@ -32,7 +39,14 @@ class SingBoxConfig(BaseConfig):
         result = json.loads(self._template_data)
         result["outbounds"].extend([self.create_outbound(config) for config in configs])
 
-        urltest_types = ["hysteria2", "vmess", "vless", "trojan", "shadowsocks"]
+        urltest_types = [
+            "hysteria2",
+            "vmess",
+            "vless",
+            "trojan",
+            "shadowsocks",
+            "wireguard",
+        ]
         urltest_tags = [
             outbound["tag"]
             for outbound in result["outbounds"]
@@ -44,6 +58,7 @@ class SingBoxConfig(BaseConfig):
             "vless",
             "trojan",
             "shadowsocks",
+            "wireguard",
             "urltest",
         ]
         selector_tags = [
@@ -184,6 +199,22 @@ class SingBoxConfig(BaseConfig):
             outbound["password"] = config.password
             if config.header_type:
                 outbound["obfs"] = {"type": config.header_type, "password": config.path}
+        elif config.protocol == "wireguard":
+            outbound.update(
+                {
+                    "private_key": config.ed25519,
+                    "local_address": [config.client_address],
+                    "mtu": config.mtu,
+                    "peers": [
+                        {
+                            "server": config.address,
+                            "port": config.port,
+                            "public_key": config.path,
+                            "allowed_ips": config.allowed_ips or ["0.0.0.0/0", "::/0"],
+                        }
+                    ],
+                }
+            )
         return outbound
 
     def add_proxies(self, proxies: List[V2Data]):

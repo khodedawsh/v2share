@@ -20,8 +20,9 @@ supported_transports = [
     "gun",
     "httpupgrade",
     "splithttp",
+    None,
 ]
-supported_protocols = ["vmess", "vless", "trojan", "shadowsocks"]
+supported_protocols = ["vmess", "vless", "trojan", "shadowsocks", "wireguard"]
 
 
 class XrayConfig(BaseConfig):
@@ -60,6 +61,7 @@ class XrayConfig(BaseConfig):
             self._configs.append(proxy)
 
     def render(self, sort: bool = True, shuffle: bool = False):
+        configs: List[V2Data] = []
         if shuffle is True:
             configs = random.sample(self._configs, len(self._configs))
         elif sort is True:
@@ -96,6 +98,17 @@ class XrayConfig(BaseConfig):
                     password=data.password,
                     method=data.shadowsocks_method,
                 )
+            elif data.protocol == "wireguard":
+                outbound["settings"] = XrayConfig.wireguard_config(
+                    address=data.address,
+                    port=data.port,
+                    peer_public_key=data.path,
+                    private_key=data.ed25519,
+                    mtu=data.mtu,
+                    allowed_ips=data.allowed_ips or ["0.0.0.0/0", "::/0"],
+                    keepalive=25,
+                    client_address=[data.client_address],
+                )
 
             outbounds = [outbound]
             dialer_proxy = None
@@ -106,23 +119,23 @@ class XrayConfig(BaseConfig):
                 )
                 outbounds.append(fragment_outbound)
                 dialer_proxy = fragment_outbound["tag"]
-
-            outbound["streamSettings"] = XrayConfig.make_stream_settings(
-                net=data.transport_type,
-                tls=data.tls,
-                sni=data.sni,
-                host=data.host,
-                path=data.path,
-                alpn=data.alpn,
-                fp=data.fingerprint,
-                pbk=data.reality_pbk,
-                sid=data.reality_sid,
-                ais=data.allow_insecure,
-                header_type=data.header_type,
-                grpc_multi_mode=data.grpc_multi_mode,
-                dialer_proxy=dialer_proxy,
-                headers=data.http_headers,
-            )
+            if data.transport_type:
+                outbound["streamSettings"] = XrayConfig.make_stream_settings(
+                    net=data.transport_type,
+                    tls=data.tls,
+                    sni=data.sni,
+                    host=data.host,
+                    path=data.path,
+                    alpn=data.alpn,
+                    fp=data.fingerprint,
+                    pbk=data.reality_pbk,
+                    sid=data.reality_sid,
+                    ais=data.allow_insecure,
+                    header_type=data.header_type,
+                    grpc_multi_mode=data.grpc_multi_mode,
+                    dialer_proxy=dialer_proxy,
+                    headers=data.http_headers,
+                )
 
             mux_config = json.loads(self._mux_template)
             mux_config["enabled"] = data.enable_mux
@@ -141,16 +154,16 @@ class XrayConfig(BaseConfig):
 
     @staticmethod
     def tls_config(sni, fingerprint, alpn=None, ais=False):
-        tlsSettings = {"serverName": sni, "allowInsecure": ais or False}
+        tls_settings = {"serverName": sni, "allowInsecure": ais or False}
         if alpn is None:
             alpn = ["h2", "http/1.1"]
 
-        tlsSettings["alpn"] = alpn
+        tls_settings["alpn"] = alpn
 
         if fingerprint:
-            tlsSettings["fingerprint"] = fingerprint
+            tls_settings["fingerprint"] = fingerprint
 
-        return tlsSettings
+        return tls_settings
 
     @staticmethod
     def reality_config(public_key, short_id, sni, fingerprint="", spiderx=""):
@@ -397,7 +410,7 @@ class XrayConfig(BaseConfig):
         }
 
     @staticmethod
-    def shadowsocks_config(address, port, password, method):
+    def shadowsocks_config(address: str, port: int, password: str, method: str):
         return {
             "servers": [
                 {
@@ -409,6 +422,32 @@ class XrayConfig(BaseConfig):
                     "uot": False,
                 }
             ]
+        }
+
+    @classmethod
+    def wireguard_config(
+        cls,
+        address: str,
+        port: int,
+        peer_public_key: str,
+        private_key: str,
+        client_address: List,
+        mtu: int,
+        allowed_ips: List[str],
+        keepalive: int,
+    ):
+        return {
+            "secretKey": private_key,
+            "address": client_address,
+            "peers": [
+                {
+                    "endpoint": address + ":" + str(port),
+                    "publicKey": peer_public_key,
+                    "allowedIPs": allowed_ips,
+                    "keepAlive": keepalive,
+                }
+            ],
+            "mtu": mtu,
         }
 
     @staticmethod
