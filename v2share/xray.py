@@ -154,7 +154,6 @@ class XrayConfig(BaseConfig):
 
     @staticmethod
     def reality_config(public_key, short_id, sni, fingerprint="", spiderx=""):
-
         return {
             "serverName": sni,
             "fingerprint": fingerprint,
@@ -192,7 +191,6 @@ class XrayConfig(BaseConfig):
 
     @staticmethod
     def grpc_config(authority=None, service_name=None, multi_mode=False):
-
         grpc_settings = {
             "multiMode": multi_mode,
         }
@@ -203,14 +201,24 @@ class XrayConfig(BaseConfig):
         return grpc_settings
 
     @staticmethod
-    def tcp_http_config(header_type=None):
+    def tcp_http_config(header_type=None, host=None, path=None):
         if header_type is None:
             header_type = "none"
+        if host is None:
+            host = []
+        if path is None:
+            path = "/"
 
         tcp_settings = {
             "header": {
                 "type": header_type,
-            }
+                "request": {
+                    "headers": {
+                        "Host": [host],
+                    },
+                    "path": [path],
+                },
+            },
         }
 
         return tcp_settings
@@ -248,7 +256,6 @@ class XrayConfig(BaseConfig):
 
     @staticmethod
     def quic_config(security="none", key=None, header_type="none"):
-
         quic_settings = {
             "security": security,
             "header": {"type": header_type},
@@ -261,7 +268,6 @@ class XrayConfig(BaseConfig):
 
     @staticmethod
     def kcp_config(seed=None, header_type=None):
-
         kcp_settings = {
             "header": {},
         }
@@ -313,7 +319,7 @@ class XrayConfig(BaseConfig):
             )
         elif net == "tcp":
             stream_settings["tcpSettings"] = XrayConfig.tcp_http_config(
-                header_type=header_type
+                header_type=header_type, host=host, path=path
             )
         elif net == "quic":
             stream_settings["quicSettings"] = XrayConfig.quic_config(
@@ -348,7 +354,6 @@ class XrayConfig(BaseConfig):
 
     @staticmethod
     def vmess_config(address: str, port: int, uuid: str):
-
         return {
             "vnext": [
                 {
@@ -366,7 +371,6 @@ class XrayConfig(BaseConfig):
 
     @staticmethod
     def vless_config(address, port, uuid, flow=""):
-
         return {
             "vnext": [
                 {
