@@ -204,8 +204,6 @@ class XrayConfig(BaseConfig):
     def tcp_http_config(header_type=None, host=None, path=None):
         if header_type is None:
             header_type = "none"
-        if host is None:
-            host = []
         if path is None:
             path = "/"
 
@@ -216,7 +214,7 @@ class XrayConfig(BaseConfig):
                     {
                         "request": {
                             "headers": {
-                                "Host": [host],
+                                "Host": [host] if host else [],
                             },
                             "path": [path],
                         }
