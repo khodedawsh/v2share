@@ -108,7 +108,7 @@ class SingBoxConfig(BaseConfig):
 
     @staticmethod
     def transport_config(
-        transport_type="http",
+        transport_type="tcp",
         host=None,
         path=None,
         http_method=None,
@@ -119,10 +119,11 @@ class SingBoxConfig(BaseConfig):
 
         transport_config = {"type": transport_type}
 
-        if transport_type == "http":
+        if transport_type == "tcp":
+            transport_config["type"] = "http"
             transport_config["headers"] = headers
             if host:
-                transport_config["host"] = host
+                transport_config["host"] = [host]
             if path:
                 transport_config["path"] = path
             if http_method:
@@ -167,7 +168,7 @@ class SingBoxConfig(BaseConfig):
         ):
             outbound["flow"] = config.flow
 
-        if config.transport_type in ["http", "ws", "quic", "grpc", "httpupgrade"]:
+        if config.transport_type in ["tcp", "ws", "quic", "grpc", "httpupgrade"]:
             outbound["transport"] = SingBoxConfig.transport_config(
                 transport_type=config.transport_type,
                 host=config.host,
