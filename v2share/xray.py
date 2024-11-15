@@ -209,19 +209,23 @@ class XrayConfig(BaseConfig):
         if path is None:
             path = "/"
 
-        tcp_settings = {
+        return {
             "header": {
                 "type": header_type,
-                "request": {
-                    "headers": {
-                        "Host": [host],
-                    },
-                    "path": [path],
-                },
+                **(
+                    {
+                        "request": {
+                            "headers": {
+                                "Host": [host],
+                            },
+                            "path": [path],
+                        }
+                    }
+                    if header_type == "http"
+                    else {}
+                ),
             },
         }
-
-        return tcp_settings
 
     @staticmethod
     def h2_config(path=None, host=None, headers=None):
