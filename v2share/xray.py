@@ -205,21 +205,23 @@ class XrayConfig(BaseConfig):
         if header_type is None:
             header_type = "none"
         if host is None:
-            host = []
+            host = ""
         if path is None:
             path = "/"
 
         tcp_settings = {
             "header": {
                 "type": header_type,
-                "request": {
-                    "headers": {
-                        "Host": [host],
-                    },
-                    "path": [path],
-                },
-            },
+            }
         }
+
+        if header_type != "none":
+            tcp_settings["header"]["request"] = {
+                "headers": {
+                    "Host": [host],
+                },
+                "path": [path],
+            }
 
         return tcp_settings
 
