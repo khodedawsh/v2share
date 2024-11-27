@@ -146,6 +146,8 @@ class SingBoxConfig(BaseConfig):
             if host:
                 transport_config["host"] = host
             if path:
+                if "?ed=" in path:
+                    path, _ = path.split("?ed=")
                 transport_config["path"] = path
         elif transport_type == "grpc":
             if path:
