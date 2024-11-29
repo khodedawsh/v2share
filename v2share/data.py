@@ -44,6 +44,7 @@ class V2Data:
     allowed_ips: Optional[List[str]] = None
     congestion_control: Optional[str] = None
     tuic_udp_relay_mode: Optional[str] = None
+    shadowtls_version: Optional[int] = None
     disable_sni: bool = False
     enable_mux: bool = False
     allow_insecure: bool = False

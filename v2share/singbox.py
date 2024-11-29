@@ -14,6 +14,8 @@ supported_protocols = [
     "vless",
     "hysteria2",
     "wireguard",
+    "shadowtls",
+    "tuic",
 ]
 supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc", None]
 
@@ -46,6 +48,8 @@ class SingBoxConfig(BaseConfig):
             "trojan",
             "shadowsocks",
             "wireguard",
+            "tuic",
+            "shadowtls",
         ]
         urltest_tags = [
             outbound["tag"]
@@ -59,6 +63,8 @@ class SingBoxConfig(BaseConfig):
             "trojan",
             "shadowsocks",
             "wireguard",
+            "tuic",
+            "shadowtls",
             "urltest",
         ]
         selector_tags = [
@@ -216,6 +222,15 @@ class SingBoxConfig(BaseConfig):
                     ],
                 }
             )
+        elif config.protocol == "shadowtls":
+            if config.shadowtls_version:
+                outbound["version"] = config.shadowtls_version
+                if config.shadowtls_version in {2, 3}:
+                    outbound["password"] = config.password
+        elif config.protocol == "tuic":
+            outbound["password"] = config.password
+            outbound["uuid"] = str(config.uuid)
+
         return outbound
 
     def add_proxies(self, proxies: List[V2Data]):
