@@ -174,7 +174,9 @@ class SingBoxConfig(BaseConfig):
         ):
             outbound["flow"] = config.flow
 
-        if config.transport_type in ["tcp", "ws", "quic", "grpc", "httpupgrade"]:
+        if config.transport_type in ["ws", "quic", "grpc", "httpupgrade"] or (
+            config.transport_type == "tcp" and config.header_type == "http"
+        ):
             outbound["transport"] = SingBoxConfig.transport_config(
                 transport_type=config.transport_type,
                 host=config.host,
