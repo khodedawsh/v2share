@@ -1,10 +1,11 @@
 import json
 import random
+from dataclasses import asdict
 from importlib import resources
 from typing import List
 
 from v2share.base import BaseConfig
-from v2share.data import V2Data
+from v2share.data import V2Data, XrayNoise
 from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
 
 supported_transports = [
@@ -119,7 +120,12 @@ class XrayConfig(BaseConfig):
                 )
                 outbounds.append(fragment_outbound)
                 dialer_proxy = fragment_outbound["tag"]
-            if data.transport_type:
+            elif data.xray_noises:
+                noisy_outbound = XrayConfig.make_noisy_outbound(data.xray_noises)
+                outbounds.append(noisy_outbound)
+                dialer_proxy = noisy_outbound["tag"]
+
+            if data.protocol != "wireguard":
                 outbound["streamSettings"] = XrayConfig.make_stream_settings(
                     net=data.transport_type,
                     tls=data.tls,
@@ -314,51 +320,55 @@ class XrayConfig(BaseConfig):
 
         stream_settings = {"network": net}
 
-        if net in {"ws", "websocket"}:
-            stream_settings["wsSettings"] = XrayConfig.ws_config(
-                path=path, host=host, headers=headers
-            )
-        elif net in {"grpc", "gun"}:
-            stream_settings["grpcSettings"] = XrayConfig.grpc_config(
-                authority=host, service_name=path, multi_mode=grpc_multi_mode
-            )
-        elif net in {"h2", "http"}:
-            stream_settings["httpSettings"] = XrayConfig.h2_config(
-                path=path, host=[host], headers=headers
-            )
-        elif net in {"kcp", "mkcp"}:
-            stream_settings["kcpSettings"] = XrayConfig.kcp_config(
-                seed=path, header_type=header_type
-            )
-        elif net == "tcp":
-            stream_settings["tcpSettings"] = XrayConfig.tcp_http_config(
-                header_type=header_type, host=host, path=path
-            )
-        elif net == "quic":
-            stream_settings["quicSettings"] = XrayConfig.quic_config(
-                security=host, key=path, header_type=header_type
-            )
-        elif net == "httpupgrade":
-            stream_settings["httpupgradeSettings"] = XrayConfig.httpupgrade_config(
-                path=path, host=host, headers=headers
-            )
-        elif net == "splithttp":
-            stream_settings["splithttpSettings"] = XrayConfig.splithttp_config(
-                path=path, host=host, headers=headers
-            )
+        if net:
+            if net in {"ws", "websocket"}:
+                stream_settings["wsSettings"] = XrayConfig.ws_config(
+                    path=path, host=host, headers=headers
+                )
+            elif net in {"grpc", "gun"}:
+                stream_settings["grpcSettings"] = XrayConfig.grpc_config(
+                    authority=host, service_name=path, multi_mode=grpc_multi_mode
+                )
+            elif net in {"h2", "http"}:
+                stream_settings["httpSettings"] = XrayConfig.h2_config(
+                    path=path, host=[host], headers=headers
+                )
+            elif net in {"kcp", "mkcp"}:
+                stream_settings["kcpSettings"] = XrayConfig.kcp_config(
+                    seed=path, header_type=header_type
+                )
+            elif net == "tcp":
+                stream_settings["tcpSettings"] = XrayConfig.tcp_http_config(
+                    header_type=header_type, host=host, path=path
+                )
+            elif net == "quic":
+                stream_settings["quicSettings"] = XrayConfig.quic_config(
+                    security=host, key=path, header_type=header_type
+                )
+            elif net == "httpupgrade":
+                stream_settings["httpupgradeSettings"] = XrayConfig.httpupgrade_config(
+                    path=path, host=host, headers=headers
+                )
+            elif net == "splithttp":
+                stream_settings["splithttpSettings"] = XrayConfig.splithttp_config(
+                    path=path, host=host, headers=headers
+                )
 
-        if tls == "tls":
-            stream_settings["security"] = "tls"
-            stream_settings["tlsSettings"] = XrayConfig.tls_config(
-                sni=sni, fingerprint=fp, alpn=alpn.split(",") if alpn else None, ais=ais
-            )
-        elif tls == "reality":
-            stream_settings["security"] = "reality"
-            stream_settings["realitySettings"] = XrayConfig.reality_config(
-                pbk, sid, sni, fingerprint=fp
-            )
-        else:
-            stream_settings["security"] = "none"
+            if tls == "tls":
+                stream_settings["security"] = "tls"
+                stream_settings["tlsSettings"] = XrayConfig.tls_config(
+                    sni=sni,
+                    fingerprint=fp,
+                    alpn=alpn.split(",") if alpn else None,
+                    ais=ais,
+                )
+            elif tls == "reality":
+                stream_settings["security"] = "reality"
+                stream_settings["realitySettings"] = XrayConfig.reality_config(
+                    pbk, sid, sni, fingerprint=fp
+                )
+            else:
+                stream_settings["security"] = "none"
 
         if dialer_proxy:
             stream_settings["sockopt"] = {"dialerProxy": dialer_proxy}
@@ -462,4 +472,12 @@ class XrayConfig(BaseConfig):
             "settings": {
                 "fragment": {"packets": packets, "length": length, "interval": interval}
             },
+        }
+
+    @staticmethod
+    def make_noisy_outbound(xray_noises: List[XrayNoise]):
+        return {
+            "tag": "noisy_out",
+            "protocol": "freedom",
+            "settings": {"noises": [asdict(noise) for noise in xray_noises]},
         }

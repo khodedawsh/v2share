@@ -10,6 +10,13 @@ from v2share.exceptions import ProtocolNotSupportedError
 
 
 @dataclass
+class XrayNoise:
+    type: str
+    packet: str
+    delay: str
+
+
+@dataclass
 class V2Data:
     protocol: str
     remark: str
@@ -39,6 +46,7 @@ class V2Data:
     fragment_packets: str = "tlshello"
     fragment_length: str = "100-200"
     fragment_interval: str = "10-20"
+    xray_noises: Optional[List[XrayNoise]] = None
     mtu: Optional[int] = None
     dns_servers: Optional[List[str]] = None
     allowed_ips: Optional[List[str]] = None
