@@ -119,6 +119,7 @@ class SingBoxConfig(BaseConfig):
         path=None,
         http_method=None,
         headers=None,
+        early_data=None,
     ):
         if headers is None:
             headers = {}
@@ -137,13 +138,11 @@ class SingBoxConfig(BaseConfig):
         elif transport_type == "ws":
             transport_config["headers"] = headers
             if path:
-                if "?ed=" in path:
-                    path, max_early_data = path.split("?ed=")
-                    max_early_data = int(max_early_data)
+                if early_data:
                     transport_config["early_data_header_name"] = (
                         "Sec-WebSocket-Protocol"
                     )
-                    transport_config["max_early_data"] = max_early_data
+                    transport_config["max_early_data"] = early_data
                 transport_config["path"] = path
             if host:
                 transport_config["headers"]["Host"] = host
@@ -182,6 +181,7 @@ class SingBoxConfig(BaseConfig):
                 host=config.host,
                 path=config.path,
                 headers=config.http_headers,
+                early_data=config.early_data,
             )
 
         if config.tls in ("tls", "reality"):

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Dict, List
 from uuid import UUID
 
-from v2share._utils import filter_dict
+from v2share._utils import filter_dict, set_path_early_data
 from v2share.exceptions import ProtocolNotSupportedError
 
 
@@ -47,6 +47,7 @@ class V2Data:
     fragment_length: str = "100-200"
     fragment_interval: str = "10-20"
     xray_noises: Optional[List[XrayNoise]] = None
+    early_data: Optional[int] = None
     mtu: Optional[int] = None
     dns_servers: Optional[List[str]] = None
     allowed_ips: Optional[List[str]] = None
@@ -96,6 +97,10 @@ class V2Data:
             transport_data = {"key": self.path, "quicSecurity": self.host}
         else:
             transport_data = {"path": self.path, "host": self.host}
+            if self.transport_type in {"ws", "httpupgrade"} and transport_data["path"]:
+                transport_data["path"] = set_path_early_data(
+                    transport_data["path"], self.early_data
+                )
 
         payload.update(transport_data)
 

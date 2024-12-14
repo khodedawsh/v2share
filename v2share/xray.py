@@ -4,6 +4,7 @@ from dataclasses import asdict
 from importlib import resources
 from typing import List
 
+from v2share._utils import set_path_early_data
 from v2share.base import BaseConfig
 from v2share.data import V2Data, XrayNoise
 from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
@@ -183,26 +184,36 @@ class XrayConfig(BaseConfig):
         }
 
     @staticmethod
-    def ws_config(path=None, host=None, headers=None):
+    def ws_config(path=None, host=None, headers=None, early_data=None):
         if headers is None:
             headers = {}
 
         ws_settings = {"headers": headers}
         if path:
             ws_settings["path"] = path
+
+        if early_data:
+            ws_settings["path"] = set_path_early_data(
+                ws_settings.get("path", "/"), early_data
+            )
+
         if host:
             ws_settings["host"] = host
 
         return ws_settings
 
     @staticmethod
-    def httpupgrade_config(path=None, host=None, headers=None):
+    def httpupgrade_config(path=None, host=None, headers=None, early_data=None):
         if headers is None:
             headers = {}
 
         httpupgrade_settings = {"headers": headers}
         if path:
             httpupgrade_settings["path"] = path
+        if early_data:
+            httpupgrade_settings["path"] = set_path_early_data(
+                httpupgrade_settings.get("path", "/"), early_data
+            )
         if host:
             httpupgrade_settings["host"] = host
 
@@ -314,6 +325,7 @@ class XrayConfig(BaseConfig):
         grpc_multi_mode=False,
         dialer_proxy=None,
         headers=None,
+        early_data=None,
     ):
         if headers is None:
             headers = {}
@@ -323,7 +335,7 @@ class XrayConfig(BaseConfig):
         if net:
             if net in {"ws", "websocket"}:
                 stream_settings["wsSettings"] = XrayConfig.ws_config(
-                    path=path, host=host, headers=headers
+                    path=path, host=host, headers=headers, early_data=early_data
                 )
             elif net in {"grpc", "gun"}:
                 stream_settings["grpcSettings"] = XrayConfig.grpc_config(
@@ -347,7 +359,7 @@ class XrayConfig(BaseConfig):
                 )
             elif net == "httpupgrade":
                 stream_settings["httpupgradeSettings"] = XrayConfig.httpupgrade_config(
-                    path=path, host=host, headers=headers
+                    path=path, host=host, headers=headers, early_data=early_data
                 )
             elif net == "splithttp":
                 stream_settings["splithttpSettings"] = XrayConfig.splithttp_config(
