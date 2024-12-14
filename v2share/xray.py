@@ -220,14 +220,18 @@ class XrayConfig(BaseConfig):
         return httpupgrade_settings
 
     @staticmethod
-    def grpc_config(authority=None, service_name=None, multi_mode=False):
-        grpc_settings = {
-            "multiMode": multi_mode,
-        }
-        if service_name:
+    def grpc_config(
+        authority=None, service_name=None, multi_mode=None, user_agent=None
+    ):
+        grpc_settings = {}
+        if multi_mode is not None:
+            grpc_settings["multiMode"] = multi_mode
+        if service_name is not None:
             grpc_settings["serviceName"] = service_name
-        if authority:
+        if authority is not None:
             grpc_settings["authority"] = authority
+        if user_agent is not None:
+            grpc_settings["user_agent"] = user_agent
         return grpc_settings
 
     @staticmethod
@@ -297,7 +301,7 @@ class XrayConfig(BaseConfig):
         return quic_settings
 
     @staticmethod
-    def kcp_config(seed=None, header_type=None):
+    def kcp_config(seed=None, header_type=None) -> dict:
         kcp_settings = {
             "header": {},
         }
@@ -323,10 +327,11 @@ class XrayConfig(BaseConfig):
         ais=False,
         header_type=None,
         grpc_multi_mode=False,
+        grpc_user_agent=None,
         dialer_proxy=None,
         headers=None,
         early_data=None,
-    ):
+    ) -> dict:
         if headers is None:
             headers = {}
 
@@ -339,7 +344,10 @@ class XrayConfig(BaseConfig):
                 )
             elif net in {"grpc", "gun"}:
                 stream_settings["grpcSettings"] = XrayConfig.grpc_config(
-                    authority=host, service_name=path, multi_mode=grpc_multi_mode
+                    authority=host,
+                    service_name=path,
+                    multi_mode=grpc_multi_mode,
+                    user_agent=grpc_user_agent,
                 )
             elif net in {"h2", "http"}:
                 stream_settings["httpSettings"] = XrayConfig.h2_config(
@@ -388,7 +396,7 @@ class XrayConfig(BaseConfig):
         return stream_settings
 
     @staticmethod
-    def vmess_config(address: str, port: int, uuid: str):
+    def vmess_config(address: str, port: int, uuid: str) -> dict:
         return {
             "vnext": [
                 {
@@ -405,7 +413,7 @@ class XrayConfig(BaseConfig):
         }
 
     @staticmethod
-    def vless_config(address, port, uuid, flow=""):
+    def vless_config(address, port, uuid, flow="") -> dict:
         return {
             "vnext": [
                 {
@@ -423,7 +431,7 @@ class XrayConfig(BaseConfig):
         }
 
     @staticmethod
-    def trojan_config(address, port, password):
+    def trojan_config(address, port, password) -> dict:
         return {
             "servers": [
                 {
@@ -436,7 +444,7 @@ class XrayConfig(BaseConfig):
         }
 
     @staticmethod
-    def shadowsocks_config(address: str, port: int, password: str, method: str):
+    def shadowsocks_config(address: str, port: int, password: str, method: str) -> dict:
         return {
             "servers": [
                 {
@@ -461,7 +469,7 @@ class XrayConfig(BaseConfig):
         mtu: int,
         allowed_ips: List[str],
         keepalive: int,
-    ):
+    ) -> dict:
         return {
             "secretKey": private_key,
             "address": client_address,

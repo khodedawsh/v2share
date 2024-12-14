@@ -30,7 +30,8 @@ class V2Data:
     host: Optional[str] = None
     http_headers: Dict[str, str] = field(default_factory=dict)
     transport_type: str = "tcp"
-    grpc_multi_mode: bool = False
+    grpc_multi_mode: Optional[bool] = None
+    grpc_user_agent: Optional[str] = None
     path: Optional[str] = None
     header_type: Optional[str] = None
     tls: str = "none"
