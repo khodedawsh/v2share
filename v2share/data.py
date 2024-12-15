@@ -115,9 +115,9 @@ class V2Data:
             transport_data = {"key": self.path, "quicSecurity": self.host}
         else:
             transport_data = {"path": self.path, "host": self.host}
-            if self.transport_type in {"ws", "httpupgrade"} and transport_data["path"]:
+            if self.transport_type in {"ws", "httpupgrade"} and self.early_data:
                 transport_data["path"] = set_path_early_data(
-                    transport_data["path"], self.early_data
+                    transport_data.get("path", "/"), self.early_data
                 )
             if (
                 self.transport_type == "splithttp"
