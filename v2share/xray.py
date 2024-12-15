@@ -144,9 +144,10 @@ class XrayConfig(BaseConfig):
                     headers=data.http_headers,
                 )
 
-            mux_config = json.loads(self._mux_template)
-            mux_config["enabled"] = data.enable_mux
-            outbound["mux"] = mux_config
+            if data.mux_settings.protocol == "mux_cool":
+                mux_config = json.loads(self._mux_template)
+                mux_config["enabled"] = data.enable_mux
+                outbound["mux"] = mux_config
 
             json_template = json.loads(self._template)
             complete_config = {

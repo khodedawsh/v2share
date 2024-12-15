@@ -233,6 +233,20 @@ class SingBoxConfig(BaseConfig):
             outbound["password"] = config.password
             outbound["uuid"] = str(config.uuid)
 
+        if config.enable_mux is True and config.mux_settings.protocol in {
+            "h2mux",
+            "yamux",
+            "smux",
+        }:
+            outbound["mux"] = {"enabled": True}
+            if config.mux_settings.sing_box_mux_settings is not None:
+                for k, v in {
+                    "max_connections": config.mux_settings.sing_box_mux_settings.max_connections,
+                    "min_streams": config.mux_settings.sing_box_mux_settings.min_streams,
+                    "max_streams": config.mux_settings.sing_box_mux_settings.max_streams,
+                }.items():
+                    if v is not None:
+                        outbound["mux"][k] = v
         return outbound
 
     def add_proxies(self, proxies: List[V2Data]):

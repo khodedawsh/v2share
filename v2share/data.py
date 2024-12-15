@@ -33,6 +33,28 @@ class SplitHttpSettings:
 
 
 @dataclass
+class SingBoxMuxSettings:
+    max_connections: Optional[int] = None
+    min_streams: Optional[int] = None
+    max_streams: Optional[int] = None
+    padding: Optional[bool] = None
+
+
+@dataclass
+class MuxCoolSettings:
+    concurrency: Optional[int] = None
+    xudp_concurrency: Optional[int] = None
+    xudp_proxy_443: Optional[str] = None
+
+
+@dataclass
+class MuxSettings:
+    protocol: str = "mux_cool"
+    sing_box_mux_settings: Optional[SingBoxMuxSettings] = None
+    mux_cool_settings: Optional[MuxCoolSettings] = None
+
+
+@dataclass
 class V2Data:
     protocol: str
     remark: str
@@ -76,6 +98,7 @@ class V2Data:
     allow_insecure: bool = False
     weight: int = 1
     splithttp_settings: Optional[SplitHttpSettings] = None
+    mux_settings: MuxSettings = field(default_factory=MuxSettings)
 
     def _apply_tls_settings(self, payload):
         if self.tls in ["tls", "reality"]:
