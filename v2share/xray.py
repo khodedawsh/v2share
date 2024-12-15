@@ -2,11 +2,11 @@ import json
 import random
 from dataclasses import asdict
 from importlib import resources
-from typing import List
+from typing import List, Optional
 
 from v2share._utils import set_path_early_data
 from v2share.base import BaseConfig
-from v2share.data import V2Data, XrayNoise
+from v2share.data import V2Data, XrayNoise, SplitHttpSettings
 from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
 
 supported_transports = [
@@ -273,7 +273,9 @@ class XrayConfig(BaseConfig):
         return http_settings
 
     @staticmethod
-    def splithttp_config(path=None, host=None, headers=None):
+    def splithttp_config(
+        path=None, host=None, headers=None, settings: Optional[SplitHttpSettings] = None
+    ):
         if host is None:
             host = []
         if path is None:
@@ -286,6 +288,21 @@ class XrayConfig(BaseConfig):
         if host:
             splithttp_settings["host"] = host
 
+        if settings is not None:
+            if settings.mode is not None:
+                splithttp_settings["mode"] = settings.mode
+            if settings.no_grpc_header is not None:
+                splithttp_settings["noGRPCHeader"] = settings.no_grpc_header
+            if settings.xmux is not None:
+                splithttp_settings["xmux"] = {}
+                for k, v in {
+                    "maxConcurrency": settings.xmux.max_concurrency,
+                    "maxConnections": settings.xmux.max_connections,
+                    "cMaxReuseTimes": settings.xmux.max_reuse_times,
+                    "cMaxLifetimeMs": settings.xmux.max_lifetime,
+                }.items():
+                    if v is not None:
+                        splithttp_settings["xmux"][k] = v
         return splithttp_settings
 
     @staticmethod

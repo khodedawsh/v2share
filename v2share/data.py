@@ -17,6 +17,22 @@ class XrayNoise:
 
 
 @dataclass
+class XMuxSettings:
+    max_concurrency: Optional[str] = None
+    max_connections: Optional[str] = None
+    max_reuse_times: Optional[str] = None
+    max_lifetime: Optional[str] = None
+
+
+@dataclass
+class SplitHttpSettings:
+    mode: Optional[str] = None
+    no_grpc_header: Optional[bool] = None
+    padding_bytes: Optional[str] = None
+    xmux: Optional[XMuxSettings] = None
+
+
+@dataclass
 class V2Data:
     protocol: str
     remark: str
@@ -59,6 +75,7 @@ class V2Data:
     enable_mux: bool = False
     allow_insecure: bool = False
     weight: int = 1
+    splithttp_settings: Optional[SplitHttpSettings] = None
 
     def _apply_tls_settings(self, payload):
         if self.tls in ["tls", "reality"]:
@@ -102,6 +119,12 @@ class V2Data:
                 transport_data["path"] = set_path_early_data(
                     transport_data["path"], self.early_data
                 )
+            if (
+                self.transport_type == "splithttp"
+                and self.splithttp_settings
+                and self.splithttp_settings.mode is not None
+            ):
+                transport_data["mode"] = self.splithttp_settings.mode
 
         payload.update(transport_data)
 
