@@ -8,11 +8,11 @@ from v2share.base import BaseConfig
 from v2share.data import V2Data
 from v2share.exceptions import TransportNotSupportedError, ProtocolNotSupportedError
 
-supported_transports = ["tcp", "http", "ws", "grpc", "h2"]
-supported_protocols = ["vmess", "trojan", "shadowsocks"]
-
 
 class ClashConfig(BaseConfig):
+    supported_transports = ["tcp", "http", "ws", "grpc", "h2", None]
+    supported_protocols = ["vmess", "trojan", "shadowsocks"]
+
     def __init__(self, template_path: Optional[str] = None, swallow_errors=True):
         if not template_path:
             template_path = resources.files("v2share.templates") / "clash.yml"
@@ -26,8 +26,10 @@ class ClashConfig(BaseConfig):
             # validation
             if (
                 unsupported_transport := proxy.transport_type
-                not in supported_transports
-            ) or (unsupported_protocol := proxy.protocol not in supported_protocols):
+                not in self.supported_transports
+            ) or (
+                unsupported_protocol := proxy.protocol not in self.supported_protocols
+            ):
                 if self._swallow_errors:
                     continue
                 if unsupported_transport:

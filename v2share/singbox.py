@@ -7,20 +7,21 @@ from v2share.base import BaseConfig
 from v2share.data import V2Data
 from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
 
-supported_protocols = [
-    "shadowsocks",
-    "vmess",
-    "trojan",
-    "vless",
-    "hysteria2",
-    "wireguard",
-    "shadowtls",
-    "tuic",
-]
-supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc", "http", None]
-
 
 class SingBoxConfig(BaseConfig):
+    chaining_support = True
+    supported_protocols = [
+        "shadowsocks",
+        "vmess",
+        "trojan",
+        "vless",
+        "hysteria2",
+        "wireguard",
+        "shadowtls",
+        "tuic",
+    ]
+    supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc", "http", None]
+
     def __init__(self, template_path: str = None, swallow_errors=True):
         if not template_path:
             template_path = resources.files("v2share.templates") / "singbox.json"
@@ -34,12 +35,25 @@ class SingBoxConfig(BaseConfig):
         if shuffle is True:
             configs = random.sample(self._configs, len(self._configs))
         elif sort is True:
-            configs = sorted(self._configs, key=lambda config: config.weight)
+            configs = sorted(self._configs, key=lambda c: c.weight)
         else:
             configs = self._configs
 
         result = json.loads(self._template_data)
-        result["outbounds"].extend([self.create_outbound(config) for config in configs])
+
+        blackset = set()
+        for config in configs:
+            c = config
+            while True:
+                outbound = self.create_outbound(c)
+                if c.next:
+                    outbound["detour"] = config.next.remark
+                    blackset.add(c.next.remark)
+                    c = config.next
+                    result["outbounds"].append(outbound)
+                else:
+                    result["outbounds"].append(outbound)
+                    break
 
         urltest_types = [
             "hysteria2",
@@ -54,7 +68,7 @@ class SingBoxConfig(BaseConfig):
         urltest_tags = [
             outbound["tag"]
             for outbound in result["outbounds"]
-            if outbound["type"] in urltest_types
+            if outbound["type"] in urltest_types and outbound["tag"] not in blackset
         ]
         selector_types = [
             "hysteria2",
@@ -70,7 +84,7 @@ class SingBoxConfig(BaseConfig):
         selector_tags = [
             outbound["tag"]
             for outbound in result["outbounds"]
-            if outbound["type"] in selector_types
+            if outbound["type"] in selector_types and outbound["tag"] not in blackset
         ]
 
         for outbound in result["outbounds"]:
@@ -254,8 +268,10 @@ class SingBoxConfig(BaseConfig):
             # validation
             if (
                 unsupported_transport := proxy.transport_type
-                not in supported_transports
-            ) or (unsupported_protocol := proxy.protocol not in supported_protocols):
+                not in self.supported_transports
+            ) or (
+                unsupported_protocol := proxy.protocol not in self.supported_protocols
+            ):
                 if self._swallow_errors:
                     continue
                 if unsupported_transport:

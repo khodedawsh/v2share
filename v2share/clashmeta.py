@@ -4,11 +4,11 @@ from v2share.clash import ClashConfig
 from v2share.data import V2Data
 from v2share.exceptions import TransportNotSupportedError, ProtocolNotSupportedError
 
-supported_transports = ["tcp", "http", "ws", "grpc", "h2"]
-supported_protocols = ["vmess", "trojan", "shadowsocks", "vless"]
-
 
 class ClashMetaConfig(ClashConfig):
+    supported_transports = ["tcp", "http", "ws", "grpc", "h2", None]
+    supported_protocols = ["vmess", "trojan", "shadowsocks", "vless"]
+
     def _make_node(
         self,
         name: str,
@@ -93,8 +93,10 @@ class ClashMetaConfig(ClashConfig):
             # validation
             if (
                 unsupported_transport := proxy.transport_type
-                not in supported_transports
-            ) or (unsupported_protocol := proxy.protocol not in supported_protocols):
+                not in self.supported_transports
+            ) or (
+                unsupported_protocol := proxy.protocol not in self.supported_protocols
+            ):
                 if self._swallow_errors:
                     continue
                 if unsupported_transport:

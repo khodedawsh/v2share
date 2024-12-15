@@ -97,6 +97,7 @@ class V2Data:
     enable_mux: bool = False
     allow_insecure: bool = False
     weight: int = 1
+    next: Optional["V2Data"] = None
     splithttp_settings: Optional[SplitHttpSettings] = None
     mux_settings: MuxSettings = field(default_factory=MuxSettings)
 

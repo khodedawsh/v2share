@@ -5,6 +5,10 @@ from .data import V2Data
 
 
 class BaseConfig(ABC):
+    chaining_support: bool = False
+    supported_transports: List
+    supported_protocols: List
+
     @abstractmethod
     def render(self, sort: bool, shuffle: bool) -> str:
         pass
