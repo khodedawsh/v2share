@@ -4,7 +4,7 @@ from dataclasses import asdict
 from importlib import resources
 from typing import List, Optional
 
-from v2share._utils import set_path_early_data
+from v2share._utils import set_path_early_data, filter_dict
 from v2share.base import BaseConfig
 from v2share.data import V2Data, XrayNoise, SplitHttpSettings
 from v2share.exceptions import ProtocolNotSupportedError, TransportNotSupportedError
@@ -302,15 +302,17 @@ class XrayConfig(BaseConfig):
             if settings.no_grpc_header is not None:
                 splithttp_settings["noGRPCHeader"] = settings.no_grpc_header
             if settings.xmux is not None:
-                splithttp_settings["xmux"] = {}
-                for k, v in {
-                    "maxConcurrency": settings.xmux.max_concurrency,
-                    "maxConnections": settings.xmux.max_connections,
-                    "cMaxReuseTimes": settings.xmux.max_reuse_times,
-                    "cMaxLifetimeMs": settings.xmux.max_lifetime,
-                }.items():
-                    if v is not None:
-                        splithttp_settings["xmux"][k] = v
+                splithttp_settings["xmux"] = filter_dict(
+                    {
+                        "maxConcurrency": settings.xmux.max_concurrency,
+                        "maxConnections": settings.xmux.max_connections,
+                        "cMaxReuseTimes": settings.xmux.max_reuse_times,
+                        "cMaxLifetimeMs": settings.xmux.max_lifetime,
+                        "hMaxRequestTimes": settings.xmux.max_request_times,
+                        "hKeepAlivePeriod": settings.xmux.keep_alive_period,
+                    },
+                    (None,),
+                )
         return splithttp_settings
 
     @staticmethod
