@@ -20,7 +20,16 @@ class SingBoxConfig(BaseConfig):
         "shadowtls",
         "tuic",
     ]
-    supported_transports = ["tcp", "ws", "quic", "httpupgrade", "grpc", "http", None]
+    supported_transports = [
+        "tcp",
+        "ws",
+        "quic",
+        "httpupgrade",
+        "grpc",
+        "http",
+        "splithttp",
+        None,
+    ]
 
     def __init__(self, template_path: str = None, swallow_errors=True):
         if not template_path:
@@ -140,7 +149,7 @@ class SingBoxConfig(BaseConfig):
 
         transport_config = {"type": transport_type}
 
-        if transport_type in {"http", "tcp"}:
+        if transport_type in {"http", "tcp", "splithttp"}:
             transport_config["type"] = "http"
             transport_config["headers"] = headers
             if host:
@@ -187,9 +196,14 @@ class SingBoxConfig(BaseConfig):
         ):
             outbound["flow"] = config.flow
 
-        if config.transport_type in ["ws", "quic", "grpc", "httpupgrade", "http"] or (
-            config.transport_type == "tcp" and config.header_type == "http"
-        ):
+        if config.transport_type in [
+            "ws",
+            "quic",
+            "grpc",
+            "httpupgrade",
+            "http",
+            "splithttp",
+        ] or (config.transport_type == "tcp" and config.header_type == "http"):
             outbound["transport"] = SingBoxConfig.transport_config(
                 transport_type=config.transport_type,
                 host=config.host,
