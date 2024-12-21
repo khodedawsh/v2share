@@ -22,6 +22,8 @@ class XMuxSettings:
     max_connections: Optional[str] = None
     max_reuse_times: Optional[str] = None
     max_lifetime: Optional[str] = None
+    max_request_times: Optional[str] = None
+    keep_alive_period: Optional[int] = None
 
 
 @dataclass
@@ -145,10 +147,32 @@ class V2Data:
                 )
             if (
                 self.transport_type == "splithttp"
-                and self.splithttp_settings
-                and self.splithttp_settings.mode is not None
+                and self.splithttp_settings is not None
             ):
                 transport_data["mode"] = self.splithttp_settings.mode
+                transport_data["extra"] = filter_dict(
+                    {
+                        "headers": self.http_headers,
+                        "xPaddingBytes": self.splithttp_settings.padding_bytes,
+                        "noGRPCHeader": self.splithttp_settings.no_grpc_header,
+                        "xmux": (
+                            filter_dict(
+                                {
+                                    "maxConcurrency": self.splithttp_settings.xmux.max_concurrency,
+                                    "maxConnections": self.splithttp_settings.xmux.max_connections,
+                                    "cMaxReuseTimes": self.splithttp_settings.xmux.max_reuse_times,
+                                    "cMaxLifetimeMs": self.splithttp_settings.xmux.max_lifetime,
+                                    "hMaxRequestTimes": self.splithttp_settings.xmux.max_request_times,
+                                    "hKeepAlivePeriod": self.splithttp_settings.xmux.keep_alive_period,
+                                },
+                                (None,),
+                            )
+                            if self.splithttp_settings.xmux is not None
+                            else None
+                        ),
+                    },
+                    (None,),
+                )
 
         payload.update(transport_data)
 
@@ -177,7 +201,13 @@ class V2Data:
                 "ps": self.remark,
                 "scy": self.vmess_security,
                 "tls": self.tls,
-                "type": self.header_type,
+                "type": (
+                    self.header_type
+                    if self.transport_type != "splithttp"
+                    or not self.splithttp_settings
+                    or not self.splithttp_settings.mode
+                    else self.splithttp_settings.mode
+                ),
                 "v": "2",
             }
 
