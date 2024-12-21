@@ -96,12 +96,11 @@ class V2Data:
     tuic_udp_relay_mode: Optional[str] = None
     shadowtls_version: Optional[int] = None
     disable_sni: bool = False
-    enable_mux: bool = False
     allow_insecure: bool = False
     weight: int = 1
     next: Optional["V2Data"] = None
     splithttp_settings: Optional[SplitHttpSettings] = None
-    mux_settings: MuxSettings = field(default_factory=MuxSettings)
+    mux_settings: Optional[MuxSettings] = None
 
     def _apply_tls_settings(self, payload):
         if self.tls in ["tls", "reality"]:

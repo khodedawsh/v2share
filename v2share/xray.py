@@ -28,7 +28,6 @@ class XrayConfig(BaseConfig):
     def __init__(
         self,
         template_path: str = None,
-        mux_template_path: str = None,
         swallow_errors=True,
     ):
         self.config = []
@@ -36,12 +35,8 @@ class XrayConfig(BaseConfig):
         self._swallow_errors = swallow_errors
         if not template_path:
             template_path = resources.files("v2share.templates") / "xray.json"
-        if not mux_template_path:
-            mux_template_path = resources.files("v2share.templates") / "xray_mux.json"
         with open(template_path) as f:
             self._template = f.read()
-        with open(mux_template_path) as f:
-            self._mux_template = f.read()
 
     def add_proxies(self, proxies: List[V2Data]):
         for proxy in proxies:
@@ -72,7 +67,7 @@ class XrayConfig(BaseConfig):
 
         xray_configs = []
         for data in configs:
-            outbounds = self.create_outbounds(data, self._mux_template)
+            outbounds = self.create_outbounds(data)
             json_template = json.loads(self._template)
             complete_config = {
                 **json_template,
@@ -85,7 +80,7 @@ class XrayConfig(BaseConfig):
         return json.dumps(xray_configs, indent=4)
 
     @staticmethod
-    def create_outbounds(data: V2Data, mux_template: str):
+    def create_outbounds(data: V2Data):
         outbound = {"tag": data.remark, "protocol": data.protocol}
         outbounds = [outbound]
         dialer_proxy = None
@@ -129,7 +124,7 @@ class XrayConfig(BaseConfig):
 
         if data.protocol != "wireguard":
             if data.next:
-                next_outbounds = XrayConfig.create_outbounds(data.next, mux_template)
+                next_outbounds = XrayConfig.create_outbounds(data.next)
                 outbounds.extend(next_outbounds)
                 dialer_proxy = next_outbounds[0]["tag"]
             elif data.fragment:
@@ -160,9 +155,20 @@ class XrayConfig(BaseConfig):
                 headers=data.http_headers,
             )
 
-        if data.mux_settings.protocol == "mux_cool":
-            mux_config = json.loads(mux_template)
-            mux_config["enabled"] = data.enable_mux
+        if data.mux_settings is not None and data.mux_settings.protocol == "mux_cool":
+            mux_config = {"enabled": True}
+            if data.mux_settings.mux_cool_settings is not None:
+                mux_config.update(
+                    filter_dict(
+                        {
+                            "concurrency": data.mux_settings.mux_cool_settings.concurrency,
+                            "xudpConcurrency": data.mux_settings.mux_cool_settings.xudp_concurrency,
+                            "xudpProxyUDP443": data.mux_settings.mux_cool_settings.xudp_proxy_443,
+                        },
+                        (None,),
+                    )
+                )
+
             outbound["mux"] = mux_config
 
         return outbounds
