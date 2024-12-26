@@ -194,7 +194,11 @@ class V2Data:
                 "aid": "0",
                 "host": self.host,
                 "id": str(self.uuid),
-                "net": self.transport_type,
+                "net": (
+                    self.transport_type
+                    if self.transport_type != "splithttp"
+                    else "xhttp"
+                ),
                 "path": self.path,
                 "port": self.port,
                 "ps": self.remark,
@@ -222,7 +226,11 @@ class V2Data:
         if self.protocol in ["trojan", "vless"]:
             payload = {
                 "security": self.tls,
-                "type": self.transport_type,
+                "type": (
+                    self.transport_type
+                    if self.transport_type != "splithttp"
+                    else "xhttp"
+                ),
                 "headerType": self.header_type,
             }
             if self.protocol == "vless" and self.flow:
