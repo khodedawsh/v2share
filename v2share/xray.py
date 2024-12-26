@@ -153,6 +153,8 @@ class XrayConfig(BaseConfig):
                 grpc_multi_mode=data.grpc_multi_mode,
                 dialer_proxy=dialer_proxy,
                 headers=data.http_headers,
+                early_data=data.early_data,
+                splithttp_settings=data.splithttp_settings,
             )
 
         if data.mux_settings is not None and data.mux_settings.protocol == "mux_cool":
@@ -364,6 +366,7 @@ class XrayConfig(BaseConfig):
         dialer_proxy=None,
         headers=None,
         early_data=None,
+        splithttp_settings=None,
     ) -> dict:
         if headers is None:
             headers = {}
@@ -404,7 +407,10 @@ class XrayConfig(BaseConfig):
                 )
             elif net == "splithttp":
                 stream_settings["splithttpSettings"] = XrayConfig.splithttp_config(
-                    path=path, host=host, headers=headers
+                    path=path,
+                    host=host,
+                    headers=headers,
+                    settings=splithttp_settings,
                 )
 
             if tls == "tls":
