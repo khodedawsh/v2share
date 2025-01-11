@@ -267,7 +267,7 @@ class SingBoxConfig(BaseConfig):
             "yamux",
             "smux",
         }:
-            outbound["mux"] = {"enabled": True}
+            outbound["multiplex"] = {"enabled": True}
             if config.mux_settings.sing_box_mux_settings is not None:
                 outbound["mux"] = filter_dict(
                     {
