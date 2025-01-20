@@ -267,13 +267,14 @@ class SingBoxConfig(BaseConfig):
             "yamux",
             "smux",
         }:
-            outbound["multiplex"] = {"enabled": True}
+            outbound["multiplex"] = {"enabled": True, "protocol": config.mux_settings.protocol}
             if config.mux_settings.sing_box_mux_settings is not None:
                 outbound["multiplex"] = filter_dict(
                     {
                         "max_connections": config.mux_settings.sing_box_mux_settings.max_connections,
                         "min_streams": config.mux_settings.sing_box_mux_settings.min_streams,
                         "max_streams": config.mux_settings.sing_box_mux_settings.max_streams,
+                        "padding": config.mux_settings.sing_box_mux_settings.padding,
                     },
                     (None,),
                 )
