@@ -269,7 +269,7 @@ class SingBoxConfig(BaseConfig):
         }:
             outbound["multiplex"] = {"enabled": True, "protocol": config.mux_settings.protocol}
             if config.mux_settings.sing_box_mux_settings is not None:
-                outbound["multiplex"] = filter_dict(
+                additional_mux_settings = filter_dict(
                     {
                         "max_connections": config.mux_settings.sing_box_mux_settings.max_connections,
                         "min_streams": config.mux_settings.sing_box_mux_settings.min_streams,
@@ -278,6 +278,7 @@ class SingBoxConfig(BaseConfig):
                     },
                     (None,),
                 )
+                outbound["multiplex"].update(additional_mux_settings)
         return outbound
 
     def add_proxies(self, proxies: List[V2Data]):
