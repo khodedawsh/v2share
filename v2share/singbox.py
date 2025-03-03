@@ -99,11 +99,13 @@ class SingBoxConfig(BaseConfig):
 
         for outbound in result["outbounds"]:
             if outbound.get("type") == "urltest":
-                outbound["outbounds"] = urltest_tags
+                if not outbound.get("outbounds"):
+                    outbound["outbounds"] = urltest_tags
 
         for outbound in result["outbounds"]:
             if outbound.get("type") == "selector":
-                outbound["outbounds"] = selector_tags
+                if not outbound.get("outbounds"):
+                    outbound["outbounds"] = selector_tags
 
         return json.dumps(result, indent=4)
 
